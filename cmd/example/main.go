@@ -1,0 +1,81 @@
+package main
+
+import (
+	"context"
+	"log"
+	"net/http"
+	"os"
+	"time"
+
+	"github.com/arvarik/whoop-go/whoop"
+)
+
+// This example demonstrates how a developer running a webhook integration
+// would securely parse WHOOP webhooks, instantly query the robust REST API
+// specifically for that event's deeply nested metric payload, and sync the data out.
+func main() {
+	// Establish your core API Client setup
+	client := whoop.NewClient(
+		whoop.WithToken(os.Getenv("WHOOP_OAUTH_TOKEN")),
+		whoop.WithMaxRetries(5),               // 5 resilient retries
+		whoop.WithBackoffBase(1*time.Second),  // 1-second exponential base
+		whoop.WithBackoffMax(120*time.Second), // 2-minute limit
+	)
+
+	webhookSecret := os.Getenv("WHOOP_WEBHOOK_SECRET")
+	if webhookSecret == "" {
+		log.Fatal("WHOOP_WEBHOOK_SECRET environment variable is required")
+	}
+
+	// Setup our HTTP receiver for the skinny webhook
+	http.HandleFunc("/whoop/webhook", func(w http.ResponseWriter, r *http.Request) {
+		// 1. Securely parse and validate the HMAC-SHA256 skinny payload
+		event, err := whoop.ParseWebhook(r, webhookSecret)
+		if err != nil {
+			log.Printf("Failed to process webhook securely: %v", err)
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+
+		log.Printf("Received genuine webhook event! Type: %s, ID: %d", event.Type, event.ID)
+
+		// Acknowledge the webhook rapidly to WHOOP before processing the heavy REST pulls
+		w.WriteHeader(http.StatusOK)
+
+		// 2. We received a "workout.updated" payload on our webhook.
+		// Go and fetch the explicit deeply-nested data array synchronously in the background.
+		if event.Type == "workout.updated" {
+			go processWorkout(client, event.ID)
+		}
+	})
+
+	log.Println("Webhook Listener gracefully listening on :8080...")
+	log.Fatal(http.ListenAndServe(":8080", nil))
+}
+
+// processWorkout utilizes the robust Client setup to fetch the WHOOP Workout by its ID
+// dynamically triggered off a Webhook execution string.
+func processWorkout(client *whoop.Client, workoutID int) {
+	// 30 second context for standard API interactions
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	workout, err := client.Workout.GetByID(ctx, workoutID)
+	if err != nil {
+		log.Printf("[Webhook Worker] Failed to fetch REST API for Workout ID %d: %v", workoutID, err)
+		return
+	}
+
+	if workout.Score != nil {
+		log.Printf("[Webhook Worker] Workout Processed: ID=%d, Strain=%.2f, MaxHR=%d, Distance=%.2fm",
+			workout.ID,
+			workout.Score.Strain,
+			workout.Score.MaxHeartRate,
+			workout.Score.DistanceMeter,
+		)
+	} else {
+		log.Printf("[Webhook Worker] Workout Processed: ID=%d (Processing Score...)", workout.ID)
+	}
+
+	// TODO: Save this `workout` payload locally to a database or generic store!
+}
