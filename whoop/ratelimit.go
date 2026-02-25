@@ -38,6 +38,11 @@ func (rl *rateLimiter) Wait(ctx context.Context) error {
 	return rl.limiter.Wait(ctx)
 }
 
+// SetAutoLimiting enables or disables the rate limiter.
+func (rl *rateLimiter) SetAutoLimiting(enabled bool) {
+	rl.isAutoLimiting.Store(enabled)
+}
+
 // calculateBackoff computes the duration to wait before the next retry attempt
 // using exponential backoff with full jitter to avoid thundering herd.
 func calculateBackoff(attempt int, base, max time.Duration) time.Duration {

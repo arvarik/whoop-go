@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"sync"
 	"time"
 )
 
@@ -32,6 +33,10 @@ type RecoveryScore struct {
 // RecoveryService handles communication with the recovery related methods.
 type RecoveryService struct {
 	client *Client
+
+	listURLOnce sync.Once
+	listURL     *url.URL
+	listURLErr  error
 }
 
 // GetByID fetches a single recovery score by cycle ID.
@@ -57,12 +62,15 @@ func (s *RecoveryService) GetByID(ctx context.Context, cycleID int) (*Recovery, 
 
 // List fetches a paginated collection of recovery records.
 func (s *RecoveryService) List(ctx context.Context, opts *ListOptions) (*RecoveryPage, error) {
-	u, err := url.Parse(s.client.baseURL + "/recovery")
-	if err != nil {
-		return nil, err
+	s.listURLOnce.Do(func() {
+		s.listURL, s.listURLErr = url.Parse(s.client.baseURL + "/recovery")
+	})
+	if s.listURLErr != nil {
+		return nil, s.listURLErr
 	}
 
-	opts.encode(u)
+	u := *s.listURL
+	opts.encode(&u)
 
 	req, err := http.NewRequest(http.MethodGet, u.String(), nil)
 	if err != nil {
