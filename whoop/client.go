@@ -2,6 +2,7 @@ package whoop
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -145,4 +146,25 @@ func (c *Client) Do(ctx context.Context, req *http.Request) (*http.Response, err
 	}
 
 	return resp, nil
+}
+
+// Get performs a GET request to the specified path and decodes the response into v.
+func (c *Client) Get(ctx context.Context, path string, v any) error {
+	req, err := http.NewRequest(http.MethodGet, c.baseURL+path, nil)
+	if err != nil {
+		return err
+	}
+
+	resp, err := c.Do(ctx, req)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	if v != nil {
+		if err := json.NewDecoder(resp.Body).Decode(v); err != nil {
+			return err
+		}
+	}
+	return nil
 }

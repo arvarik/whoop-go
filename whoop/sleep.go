@@ -59,19 +59,8 @@ type SleepService struct {
 
 // GetByID fetches a single sleep event by its ID.
 func (s *SleepService) GetByID(ctx context.Context, id int) (*Sleep, error) {
-	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/activity/sleep/%d", s.client.baseURL, id), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	resp, err := s.client.Do(ctx, req)
-	if err != nil {
-		return nil, err
-	}
-	defer func() { _ = resp.Body.Close() }()
-
 	var item Sleep
-	if err := json.NewDecoder(resp.Body).Decode(&item); err != nil {
+	if err := s.client.Get(ctx, fmt.Sprintf("/activity/sleep/%d", id), &item); err != nil {
 		return nil, err
 	}
 
