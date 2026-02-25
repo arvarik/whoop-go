@@ -58,15 +58,12 @@ type paginatedResponse[T any] struct {
 }
 
 // list performs a generic paginated GET request.
-func list[T any](ctx context.Context, client *Client, path string, opts *ListOptions) (*paginatedResponse[T], error) {
-	u, err := url.Parse(client.baseURL + path)
-	if err != nil {
-		return nil, err
-	}
+func list[T any](ctx context.Context, client *Client, u *url.URL, opts *ListOptions) (*paginatedResponse[T], error) {
+	// Copy the URL so that encoding options doesn't modify the cached base
+	reqURL := *u
+	opts.encode(&reqURL)
 
-	opts.encode(u)
-
-	req, err := http.NewRequest(http.MethodGet, u.String(), nil)
+	req, err := http.NewRequest(http.MethodGet, reqURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}

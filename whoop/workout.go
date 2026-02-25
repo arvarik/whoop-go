@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"time"
 )
 
@@ -72,7 +73,12 @@ func (s *WorkoutService) GetByID(ctx context.Context, id int) (*Workout, error) 
 
 // List fetches a paginated collection of workout sessions.
 func (s *WorkoutService) List(ctx context.Context, opts *ListOptions) (*WorkoutPage, error) {
-	page, err := list[Workout](ctx, s.client, "/activity/workout", opts)
+	u, err := url.Parse(s.client.baseURL + "/activity/workout")
+	if err != nil {
+		return nil, err
+	}
+
+	page, err := list[Workout](ctx, s.client, u, opts)
 	if err != nil {
 		return nil, err
 	}
