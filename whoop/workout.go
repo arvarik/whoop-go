@@ -52,19 +52,8 @@ type WorkoutService struct {
 
 // GetByID fetches a single workout session by its ID.
 func (s *WorkoutService) GetByID(ctx context.Context, id int) (*Workout, error) {
-	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/activity/workout/%d", s.client.baseURL, id), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	resp, err := s.client.Do(ctx, req)
-	if err != nil {
-		return nil, err
-	}
-	defer func() { _ = resp.Body.Close() }()
-
 	var item Workout
-	if err := json.NewDecoder(resp.Body).Decode(&item); err != nil {
+	if err := s.client.get(ctx, fmt.Sprintf("/activity/workout/%d", id), &item); err != nil {
 		return nil, err
 	}
 
