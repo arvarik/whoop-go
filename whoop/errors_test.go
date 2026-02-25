@@ -3,6 +3,8 @@ package whoop
 import (
 	"errors"
 	"fmt"
+	"net/http"
+	"net/url"
 	"strings"
 	"testing"
 )
@@ -130,5 +132,139 @@ func TestErrorsAs_TypeAssertions(t *testing.T) {
 	var target2 *APIError
 	if !errors.As(rlErr, &target2) {
 		t.Error("expected errors.As to find APIError wrapped in RateLimitError")
+	}
+}
+
+func TestMapHTTPError(t *testing.T) {
+	testURL, _ := url.Parse("https://api.whoop.com/test")
+
+	tests := []struct {
+		name       string
+		statusCode int
+		header     http.Header
+		body       string
+		wantErr    func(*testing.T, error)
+	}{
+		{
+			name:       "401 Unauthorized",
+			statusCode: http.StatusUnauthorized,
+			body:       "unauthorized",
+			wantErr: func(t *testing.T, err error) {
+				var authErr *AuthError
+				if !errors.As(err, &authErr) {
+					t.Fatalf("expected AuthError, got %T", err)
+				}
+				if authErr.StatusCode != 401 {
+					t.Errorf("expected status 401, got %d", authErr.StatusCode)
+				}
+				// Verify it wraps APIError
+				var apiErr *APIError
+				if !errors.As(err, &apiErr) {
+					t.Error("expected wrapped APIError")
+				}
+			},
+		},
+		{
+			name:       "403 Forbidden",
+			statusCode: http.StatusForbidden,
+			body:       "forbidden",
+			wantErr: func(t *testing.T, err error) {
+				var authErr *AuthError
+				if !errors.As(err, &authErr) {
+					t.Fatalf("expected AuthError, got %T", err)
+				}
+			},
+		},
+		{
+			name:       "429 Too Many Requests (valid header)",
+			statusCode: http.StatusTooManyRequests,
+			header:     http.Header{"Retry-After": []string{"30"}},
+			body:       "too many",
+			wantErr: func(t *testing.T, err error) {
+				var rlErr *RateLimitError
+				if !errors.As(err, &rlErr) {
+					t.Fatalf("expected RateLimitError, got %T", err)
+				}
+				if rlErr.RetryAfter != 30 {
+					t.Errorf("expected RetryAfter 30, got %d", rlErr.RetryAfter)
+				}
+			},
+		},
+		{
+			name:       "429 Too Many Requests (missing header)",
+			statusCode: http.StatusTooManyRequests,
+			body:       "too many",
+			wantErr: func(t *testing.T, err error) {
+				var rlErr *RateLimitError
+				if !errors.As(err, &rlErr) {
+					t.Fatalf("expected RateLimitError, got %T", err)
+				}
+				if rlErr.RetryAfter != 0 {
+					t.Errorf("expected RetryAfter 0, got %d", rlErr.RetryAfter)
+				}
+			},
+		},
+		{
+			name:       "429 Too Many Requests (invalid header)",
+			statusCode: http.StatusTooManyRequests,
+			header:     http.Header{"Retry-After": []string{"invalid"}},
+			body:       "too many",
+			wantErr: func(t *testing.T, err error) {
+				var rlErr *RateLimitError
+				if !errors.As(err, &rlErr) {
+					t.Fatalf("expected RateLimitError, got %T", err)
+				}
+				if rlErr.RetryAfter != 0 {
+					t.Errorf("expected RetryAfter 0, got %d", rlErr.RetryAfter)
+				}
+			},
+		},
+		{
+			name:       "404 Not Found",
+			statusCode: http.StatusNotFound,
+			body:       "not found",
+			wantErr: func(t *testing.T, err error) {
+				var apiErr *APIError
+				if !errors.As(err, &apiErr) {
+					t.Fatalf("expected APIError, got %T", err)
+				}
+				if apiErr.StatusCode != 404 {
+					t.Errorf("expected status 404, got %d", apiErr.StatusCode)
+				}
+				if apiErr.Message != "not found" {
+					t.Errorf("expected message 'not found', got %q", apiErr.Message)
+				}
+			},
+		},
+		{
+			name:       "500 Internal Server Error",
+			statusCode: http.StatusInternalServerError,
+			body:       "internal error",
+			wantErr: func(t *testing.T, err error) {
+				var apiErr *APIError
+				if !errors.As(err, &apiErr) {
+					t.Fatalf("expected APIError, got %T", err)
+				}
+				if apiErr.StatusCode != 500 {
+					t.Errorf("expected status 500, got %d", apiErr.StatusCode)
+				}
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			resp := &http.Response{
+				StatusCode: tt.statusCode,
+				Header:     tt.header,
+				Request:    &http.Request{URL: testURL},
+			}
+			if resp.Header == nil {
+				resp.Header = make(http.Header)
+			}
+
+			err := mapHTTPError(resp, []byte(tt.body))
+			tt.wantErr(t, err)
+		})
 	}
 }
