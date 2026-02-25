@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"sync"
 	"time"
 )
 
@@ -32,6 +33,10 @@ type Score struct {
 // CycleService handles communication with the cycle related methods.
 type CycleService struct {
 	client *Client
+
+	listURLOnce sync.Once
+	listURL     *url.URL
+	listURLErr  error
 }
 
 // GetByID fetches a single cycle by its ID.
@@ -46,12 +51,15 @@ func (s *CycleService) GetByID(ctx context.Context, id int) (*Cycle, error) {
 
 // List fetches a paginated collection of cycles.
 func (s *CycleService) List(ctx context.Context, opts *ListOptions) (*CyclePage, error) {
-	u, err := url.Parse(s.client.baseURL + "/cycle")
-	if err != nil {
-		return nil, err
+	s.listURLOnce.Do(func() {
+		s.listURL, s.listURLErr = url.Parse(s.client.baseURL + "/cycle")
+	})
+	if s.listURLErr != nil {
+		return nil, s.listURLErr
 	}
 
-	opts.encode(u)
+	u := *s.listURL
+	opts.encode(&u)
 
 	req, err := http.NewRequest(http.MethodGet, u.String(), nil)
 	if err != nil {

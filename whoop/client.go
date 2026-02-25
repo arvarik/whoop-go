@@ -67,7 +67,7 @@ func NewClient(opts ...Option) *Client {
 // and automatic retries on 429 Too Many Requests.
 func (c *Client) Do(ctx context.Context, req *http.Request) (*http.Response, error) {
 	// Ensure the request has the provided context attached.
-	req = req.WithContext(ctx)
+	req = req.Clone(ctx)
 
 	// Inject authentication header if available.
 	if c.token != "" {
@@ -167,4 +167,20 @@ func (c *Client) Get(ctx context.Context, path string, v any) error {
 		}
 	}
 	return nil
+}
+
+// String implements the fmt.Stringer interface.
+// It returns a string representation of the client with the token redacted.
+func (c *Client) String() string {
+	if c == nil {
+		return "<nil>"
+	}
+	return fmt.Sprintf("&Client{baseURL:%s, token:<REDACTED>, maxRetries:%d, backoffBase:%v, backoffMax:%v}",
+		c.baseURL, c.maxRetries, c.backoffBase, c.backoffMax)
+}
+
+// GoString implements the fmt.GoStringer interface.
+// It ensures that even with %#v, the token is redacted.
+func (c *Client) GoString() string {
+	return c.String()
 }
