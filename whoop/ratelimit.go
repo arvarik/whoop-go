@@ -3,7 +3,7 @@ package whoop
 import (
 	"context"
 	"math"
-	"math/rand"
+	"math/rand/v2"
 	"sync/atomic"
 	"time"
 
@@ -22,9 +22,6 @@ type rateLimiter struct {
 func newRateLimiter() *rateLimiter {
 	// 100 requests per minute = 100 / 60 requests per second
 	limit := rate.Limit(100.0 / 60.0)
-
-	// Ensure we initialize rand for jitter
-	// Note: rand.Seed is deprecated in Go 1.20 as the global RNG is automatically seeded.
 
 	rl := &rateLimiter{
 		limiter: rate.NewLimiter(limit, 100),

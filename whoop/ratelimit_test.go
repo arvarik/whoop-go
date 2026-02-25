@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"sync/atomic"
 	"testing"
 	"time"
 )
@@ -93,4 +94,16 @@ func TestCalculateBackoff_JitterDistribution(t *testing.T) {
 	if len(seen) < 2 {
 		t.Errorf("expected jitter to produce varied backoffs, got %d unique values", len(seen))
 	}
+}
+
+var sink int64
+
+func BenchmarkCalculateBackoff(b *testing.B) {
+	b.RunParallel(func(pb *testing.PB) {
+		var s time.Duration
+		for pb.Next() {
+			s = calculateBackoff(1, time.Second, 10*time.Second)
+		}
+		atomic.AddInt64(&sink, int64(s))
+	})
 }
