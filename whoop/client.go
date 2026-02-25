@@ -66,7 +66,7 @@ func NewClient(opts ...Option) *Client {
 // and automatic retries on 429 Too Many Requests.
 func (c *Client) Do(ctx context.Context, req *http.Request) (*http.Response, error) {
 	// Ensure the request has the provided context attached.
-	req = req.WithContext(ctx)
+	req = req.Clone(ctx)
 
 	// Inject authentication header if available.
 	if c.token != "" {
