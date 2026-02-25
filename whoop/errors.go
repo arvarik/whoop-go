@@ -74,9 +74,15 @@ func (e *AuthError) Unwrap() error {
 
 // mapHTTPError is a helper to convert an unsuccessful HTTP response to an appropriate custom error.
 func mapHTTPError(resp *http.Response, body []byte) error {
+	msg := string(body)
+	const maxBodyLen = 1000
+	if len(msg) > maxBodyLen {
+		msg = msg[:maxBodyLen] + "..."
+	}
+
 	baseErr := &APIError{
 		StatusCode: resp.StatusCode,
-		Message:    string(body),
+		Message:    msg,
 		URL:        resp.Request.URL.String(),
 	}
 
