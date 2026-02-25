@@ -3,7 +3,6 @@ package whoop
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -101,7 +100,7 @@ type RecoveryPage struct {
 // NextPage fetches the subsequent page of Recoveries based on NextToken.
 func (p *RecoveryPage) NextPage(ctx context.Context) (*RecoveryPage, error) {
 	if p.NextToken == "" {
-		return nil, errors.New("no next page available")
+		return nil, ErrNoNextPage
 	}
 
 	nextOpts := &ListOptions{}

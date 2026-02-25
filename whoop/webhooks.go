@@ -19,9 +19,13 @@ type WebhookEvent struct {
 	TraceID string `json:"trace_id"`
 }
 
+// maxWebhookBodySize is the maximum allowed size for an incoming webhook payload (1 MB).
+const maxWebhookBodySize = 1 << 20
+
 // ParseWebhook reads and verifies an incoming HTTP request from a WHOOP Webhook.
-// It validates the `X-Whoop-Signature` using the provided secret key.
-// Ensure your HTTP handler does NOT consume `r.Body` before passing it to this function.
+// It validates the X-Whoop-Signature HMAC-SHA256 using the provided secret key.
+// The request body is capped at 1 MB to prevent memory exhaustion. Ensure your
+// HTTP handler does NOT consume r.Body before passing it to this function.
 func ParseWebhook(r *http.Request, secret string) (*WebhookEvent, error) {
 	if r.Method != http.MethodPost {
 		return nil, errors.New("webhook must be a POST request")
@@ -32,7 +36,9 @@ func ParseWebhook(r *http.Request, secret string) (*WebhookEvent, error) {
 		return nil, errors.New("missing X-Whoop-Signature header")
 	}
 
-	body, err := io.ReadAll(r.Body)
+	// Cap the body read to prevent memory exhaustion from oversized payloads.
+	body, err := io.ReadAll(io.LimitReader(r.Body, maxWebhookBodySize))
+	defer func() { _ = r.Body.Close() }()
 	if err != nil {
 		return nil, fmt.Errorf("failed to read webhook body: %w", err)
 	}

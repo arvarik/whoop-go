@@ -32,7 +32,7 @@ The library is modularized by functional domains to provide strict operational b
 
 ## Installation
 
-You need Go `1.21` or higher installed.
+You need Go `1.22` or higher installed.
 
 ```bash
 go get github.com/arvarik/whoop-go/whoop
@@ -44,13 +44,47 @@ The repository includes a fully-functional Webhook + REST architecture example a
 
 ### Running the Example
 ```bash
-# Export your Developer Credentials
-export WHOOP_OAUTH_TOKEN="..."
-export WHOOP_WEBHOOK_SECRET="..."
+# Copy the example .env and fill in your credentials
+cp .env.example .env
+vim .env   # Add your WHOOP_OAUTH_TOKEN and WHOOP_WEBHOOK_SECRET
+source .env
 
 # Start the Webhook Listener on Port 8080
 make build-local
 ./bin/example
+```
+
+### Verifying Credentials with cURL
+
+Before building an integration, you can validate your OAuth token directly against the WHOOP API:
+
+```bash
+# Set your token
+export WHOOP_OAUTH_TOKEN="your_oauth2_token_here"
+
+# 1. Fetch your basic profile
+curl -s -H "Authorization: Bearer $WHOOP_OAUTH_TOKEN" \
+  "https://api.prod.whoop.com/developer/v1/user/profile/basic" | jq
+
+# 2. Fetch your body measurements
+curl -s -H "Authorization: Bearer $WHOOP_OAUTH_TOKEN" \
+  "https://api.prod.whoop.com/developer/v1/user/measurement/body" | jq
+
+# 3. List recent physiological cycles (last 10)
+curl -s -H "Authorization: Bearer $WHOOP_OAUTH_TOKEN" \
+  "https://api.prod.whoop.com/developer/v1/cycle?limit=10" | jq
+
+# 4. List recent workouts
+curl -s -H "Authorization: Bearer $WHOOP_OAUTH_TOKEN" \
+  "https://api.prod.whoop.com/developer/v1/activity/workout?limit=10" | jq
+
+# 5. List recent sleep events
+curl -s -H "Authorization: Bearer $WHOOP_OAUTH_TOKEN" \
+  "https://api.prod.whoop.com/developer/v1/activity/sleep?limit=10" | jq
+
+# 6. List recent recovery scores
+curl -s -H "Authorization: Bearer $WHOOP_OAUTH_TOKEN" \
+  "https://api.prod.whoop.com/developer/v1/recovery?limit=10" | jq
 ```
 
 ### Under the Hood
@@ -71,7 +105,8 @@ import "github.com/arvarik/whoop-go/whoop"
 
 client := whoop.NewClient(
     whoop.WithToken("your_oauth_token"),
-    whoop.WithMaxRetries(5), // Automatically retry failures or 429 limits up to 5 times
+    whoop.WithMaxRetries(5),               // Automatically retry failures or 429 limits up to 5 times
+    whoop.WithBaseURL("https://custom.proxy.example.com"), // Optional: override base URL
 )
 ```
 
@@ -110,7 +145,7 @@ for {
     // Traverse pagination seamlessly!
     page, err = page.NextPage(ctx)
     if err != nil {
-        if err.Error() == "no next page available" {
+        if errors.Is(err, whoop.ErrNoNextPage) {
             break // Done!
         }
         log.Fatal(err)

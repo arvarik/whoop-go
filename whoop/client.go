@@ -5,11 +5,17 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 	"time"
 )
 
 const (
 	defaultBaseURL = "https://api.prod.whoop.com/developer/v1"
+
+	// Version is the semantic version of this library.
+	Version = "0.2.0"
+
+	userAgent = "whoop-go/" + Version
 )
 
 // Client is the core WHOOP API client.
@@ -69,6 +75,7 @@ func (c *Client) Do(ctx context.Context, req *http.Request) (*http.Response, err
 
 	// Set standard headers.
 	req.Header.Set("Accept", "application/json")
+	req.Header.Set("User-Agent", userAgent)
 	if req.Header.Get("Content-Type") == "" && req.Method != http.MethodGet {
 		req.Header.Set("Content-Type", "application/json")
 	}
@@ -112,7 +119,13 @@ func (c *Client) Do(ctx context.Context, req *http.Request) (*http.Response, err
 		_, _ = io.ReadAll(resp.Body)
 		_ = resp.Body.Close()
 
+		// Prefer server-suggested Retry-After if present, else exponential backoff.
 		backoff := calculateBackoff(attempt, c.backoffBase, c.backoffMax)
+		if ra := resp.Header.Get("Retry-After"); ra != "" {
+			if seconds, parseErr := strconv.Atoi(ra); parseErr == nil && seconds > 0 {
+				backoff = time.Duration(seconds) * time.Second
+			}
+		}
 
 		select {
 		case <-time.After(backoff):

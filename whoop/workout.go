@@ -3,7 +3,6 @@ package whoop
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -117,7 +116,7 @@ type WorkoutPage struct {
 // NextPage fetches the subsequent page of Workouts based on NextToken.
 func (p *WorkoutPage) NextPage(ctx context.Context) (*WorkoutPage, error) {
 	if p.NextToken == "" {
-		return nil, errors.New("no next page available")
+		return nil, ErrNoNextPage
 	}
 
 	nextOpts := &ListOptions{}

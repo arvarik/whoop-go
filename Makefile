@@ -1,4 +1,4 @@
-.PHONY: tidy test lint build-local build-linux-amd64 build-linux-arm64 clean setup
+.PHONY: tidy test lint vet cover build-local build-linux-amd64 build-linux-arm64 clean setup
 
 tidy:
 	go mod tidy
@@ -10,6 +10,12 @@ test:
 lint:
 	@echo "=> Running golangci-lint..."
 	golangci-lint run ./...
+
+vet:
+	go vet ./...
+
+cover:
+	go test -cover ./...
 
 build-local:
 	mkdir -p bin

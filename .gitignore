@@ -1,0 +1,26 @@
+# Compiled binaries
+bin/
+main
+*.exe
+
+# Environment (credentials)
+.env
+
+# IDE and editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Test coverage
+coverage.out
+coverage.html
+
+# Go workspace
+go.work
+go.work.sum

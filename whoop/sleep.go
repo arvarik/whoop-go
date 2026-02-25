@@ -3,7 +3,6 @@ package whoop
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -124,7 +123,7 @@ type SleepPage struct {
 // NextPage fetches the subsequent page of Sleep events based on NextToken.
 func (p *SleepPage) NextPage(ctx context.Context) (*SleepPage, error) {
 	if p.NextToken == "" {
-		return nil, errors.New("no next page available")
+		return nil, ErrNoNextPage
 	}
 
 	nextOpts := &ListOptions{}

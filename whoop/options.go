@@ -47,3 +47,11 @@ func WithToken(token string) Option {
 		client.token = token
 	}
 }
+
+// WithBaseURL overrides the default WHOOP API base URL.
+// This is primarily useful for testing or connecting to a proxy.
+func WithBaseURL(url string) Option {
+	return func(client *Client) {
+		client.baseURL = url
+	}
+}

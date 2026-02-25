@@ -1,10 +1,14 @@
 package whoop
 
 import (
+	"errors"
 	"net/url"
 	"strconv"
 	"time"
 )
+
+// ErrNoNextPage is returned by NextPage when there are no more pages to fetch.
+var ErrNoNextPage = errors.New("no next page available")
 
 // ListOptions specifies the optional parameters to various List methods that support pagination.
 type ListOptions struct {

@@ -3,6 +3,7 @@ package whoop
 import (
 	"fmt"
 	"net/http"
+	"strconv"
 )
 
 // APIError represents an error returned by the WHOOP API.
@@ -87,9 +88,15 @@ func mapHTTPError(resp *http.Response, body []byte) error {
 			Err:        baseErr,
 		}
 	case http.StatusTooManyRequests:
-		return &RateLimitError{
+		rlErr := &RateLimitError{
 			Err: baseErr,
 		}
+		if ra := resp.Header.Get("Retry-After"); ra != "" {
+			if seconds, parseErr := strconv.Atoi(ra); parseErr == nil {
+				rlErr.RetryAfter = seconds
+			}
+		}
+		return rlErr
 	default:
 		return baseErr
 	}

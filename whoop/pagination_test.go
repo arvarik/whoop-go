@@ -2,6 +2,7 @@ package whoop
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -32,6 +33,16 @@ func TestListOptionsEncoding(t *testing.T) {
 	}
 	if q.Get("nextToken") != "abc123token" {
 		t.Errorf("expected nextToken=abc123token, got %s", q.Get("nextToken"))
+	}
+}
+
+func TestListOptionsEncoding_Nil(t *testing.T) {
+	u, _ := url.Parse("https://api.example.com/data")
+	var opts *ListOptions
+	opts.encode(u)
+
+	if u.RawQuery != "" {
+		t.Errorf("expected no query params for nil opts, got %s", u.RawQuery)
 	}
 }
 
@@ -79,8 +90,7 @@ func TestCycleService_List_Pagination(t *testing.T) {
 	ts := httptest.NewServer(mux)
 	defer ts.Close()
 
-	client := NewClient()
-	client.baseURL = ts.URL // redirect to mock server
+	client := NewClient(WithBaseURL(ts.URL))
 
 	// Fetch Page 1
 	page1, err := client.Cycle.List(context.Background(), nil)
@@ -108,9 +118,9 @@ func TestCycleService_List_Pagination(t *testing.T) {
 		t.Errorf("expected empty next token, got '%s'", page2.NextToken)
 	}
 
-	// Fetch Page 3 (should fail)
+	// Fetch Page 3 (should fail with sentinel error)
 	_, err = page2.NextPage(context.Background())
-	if err == nil || err.Error() != "no next page available" {
-		t.Errorf("expected 'no next page available' error, got %v", err)
+	if !errors.Is(err, ErrNoNextPage) {
+		t.Errorf("expected ErrNoNextPage, got %v", err)
 	}
 }

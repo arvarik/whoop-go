@@ -3,7 +3,6 @@ package whoop
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -102,7 +101,7 @@ type CyclePage struct {
 // Returns an error if there is no next page.
 func (p *CyclePage) NextPage(ctx context.Context) (*CyclePage, error) {
 	if p.NextToken == "" {
-		return nil, errors.New("no next page available")
+		return nil, ErrNoNextPage
 	}
 
 	// Copy existing options or initialize if nil

@@ -18,20 +18,19 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: "1.21"
+          go-version-file: go.mod
 
       - name: Tidy dependencies
         run: go mod tidy
-        working-directory: .
+
+      - name: Vet
+        run: go vet ./...
 
       - name: Run Tests
-        run: go test -v -race ./...
-        working-directory: .
+        run: go test -v -race -cover ./...
 
       - name: Run golangci-lint
-        uses: golangci/golangci-lint-action@v3
-        continue-on-error: true
+        uses: golangci/golangci-lint-action@v6
         with:
           version: latest
-          working-directory: .
           args: --timeout=5m
