@@ -27,8 +27,23 @@ func main() {
 		log.Fatal("WHOOP_WEBHOOK_SECRET environment variable is required")
 	}
 
+	// Create a worker pool to process webhooks concurrently but with a limit
+	// This prevents unbounded goroutine creation during traffic spikes
+	jobQueue := make(chan int, 100)
+	// Start 5 workers
+	for i := 0; i < 5; i++ {
+		go worker(client, jobQueue)
+	}
+
 	// Setup our HTTP receiver for the skinny webhook
-	http.HandleFunc("/whoop/webhook", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/whoop/webhook", webhookHandler(client, webhookSecret, jobQueue))
+
+	log.Println("Webhook Listener gracefully listening on :8080...")
+	log.Fatal(http.ListenAndServe(":8080", nil))
+}
+
+func webhookHandler(client *whoop.Client, webhookSecret string, jobQueue chan<- int) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
 		// 1. Securely parse and validate the HMAC-SHA256 skinny payload
 		event, err := whoop.ParseWebhook(r, webhookSecret)
 		if err != nil {
@@ -45,12 +60,20 @@ func main() {
 		// 2. We received a "workout.updated" payload on our webhook.
 		// Go and fetch the explicit deeply-nested data array synchronously in the background.
 		if event.Type == "workout.updated" {
-			go processWorkout(client, event.ID)
+			select {
+			case jobQueue <- event.ID:
+				// Successfully queued
+			default:
+				log.Printf("Worker pool full, dropping workout update for ID %d", event.ID)
+			}
 		}
-	})
+	}
+}
 
-	log.Println("Webhook Listener gracefully listening on :8080...")
-	log.Fatal(http.ListenAndServe(":8080", nil))
+func worker(client *whoop.Client, jobQueue <-chan int) {
+	for workoutID := range jobQueue {
+		processWorkout(client, workoutID)
+	}
 }
 
 // processWorkout utilizes the robust Client setup to fetch the WHOOP Workout by its ID
