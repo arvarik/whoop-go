@@ -1,7 +1,10 @@
 package whoop
 
 import (
+	"context"
+	"encoding/json"
 	"errors"
+	"net/http"
 	"net/url"
 	"strconv"
 	"time"
@@ -52,4 +55,32 @@ func (o *ListOptions) encode(u *url.URL) {
 type paginatedResponse[T any] struct {
 	Records   []T    `json:"records"`
 	NextToken string `json:"next_token"`
+}
+
+// list performs a generic paginated GET request.
+func list[T any](ctx context.Context, client *Client, path string, opts *ListOptions) (*paginatedResponse[T], error) {
+	u, err := url.Parse(client.baseURL + path)
+	if err != nil {
+		return nil, err
+	}
+
+	opts.encode(u)
+
+	req, err := http.NewRequest(http.MethodGet, u.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := client.Do(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	var page paginatedResponse[T]
+	if err := json.NewDecoder(resp.Body).Decode(&page); err != nil {
+		return nil, err
+	}
+
+	return &page, nil
 }

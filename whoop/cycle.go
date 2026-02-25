@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"net/url"
 	"time"
 )
 
@@ -57,26 +56,8 @@ func (s *CycleService) GetByID(ctx context.Context, id int) (*Cycle, error) {
 
 // List fetches a paginated collection of cycles.
 func (s *CycleService) List(ctx context.Context, opts *ListOptions) (*CyclePage, error) {
-	u, err := url.Parse(s.client.baseURL + "/cycle")
+	page, err := list[Cycle](ctx, s.client, "/cycle", opts)
 	if err != nil {
-		return nil, err
-	}
-
-	opts.encode(u)
-
-	req, err := http.NewRequest(http.MethodGet, u.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	resp, err := s.client.Do(ctx, req)
-	if err != nil {
-		return nil, err
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	var page paginatedResponse[Cycle]
-	if err := json.NewDecoder(resp.Body).Decode(&page); err != nil {
 		return nil, err
 	}
 
