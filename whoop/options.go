@@ -55,3 +55,11 @@ func WithBaseURL(url string) Option {
 		client.baseURL = url
 	}
 }
+
+// WithRateLimiting enables or disables client-side rate limiting.
+// This is primarily used for testing and benchmarking.
+func WithRateLimiting(enabled bool) Option {
+	return func(client *Client) {
+		client.rateLimiter.SetAutoLimiting(enabled)
+	}
+}
