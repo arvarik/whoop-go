@@ -14,6 +14,9 @@ linters-settings:
     check-blank: false
   govet:
     enable-all: true
+    disable:
+      - fieldalignment # Struct field order matches JSON API schema for readability
+      - shadow         # Too noisy for idiomatic Go error handling patterns
 
 issues:
   exclude-use-default: true
