@@ -2,9 +2,7 @@ package whoop
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"net/http"
 	"time"
 )
 
@@ -35,19 +33,8 @@ type CycleService struct {
 
 // GetByID fetches a single cycle by its ID.
 func (s *CycleService) GetByID(ctx context.Context, id int) (*Cycle, error) {
-	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/cycle/%d", s.client.baseURL, id), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	resp, err := s.client.Do(ctx, req)
-	if err != nil {
-		return nil, err
-	}
-	defer func() { _ = resp.Body.Close() }()
-
 	var cycle Cycle
-	if err := json.NewDecoder(resp.Body).Decode(&cycle); err != nil {
+	if err := s.client.Get(ctx, fmt.Sprintf("/cycle/%d", id), &cycle); err != nil {
 		return nil, err
 	}
 

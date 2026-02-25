@@ -37,15 +37,26 @@ func ParseWebhook(r *http.Request, secret string) (*WebhookEvent, error) {
 	}
 
 	// Cap the body read to prevent memory exhaustion from oversized payloads.
-	body, err := io.ReadAll(io.LimitReader(r.Body, maxWebhookBodySize))
+	limitedBody := io.LimitReader(r.Body, maxWebhookBodySize)
 	defer func() { _ = r.Body.Close() }()
-	if err != nil {
-		return nil, fmt.Errorf("failed to read webhook body: %w", err)
-	}
 
 	// Calculate HMAC SHA256 signature
 	mac := hmac.New(sha256.New, []byte(secret))
-	mac.Write(body)
+
+	// TeeReader writes to mac as it reads from limitedBody
+	tee := io.TeeReader(limitedBody, mac)
+
+	var event WebhookEvent
+	// Decode JSON from the TeeReader
+	jsonErr := json.NewDecoder(tee).Decode(&event)
+
+	// Consume any remaining body to ensure HMAC is calculated over the entire body
+	// This is crucial because json.Decoder might stop reading after the JSON object ends,
+	// or if there is whitespace/trailing garbage that is part of the signature.
+	if _, err := io.Copy(io.Discard, tee); err != nil {
+		return nil, fmt.Errorf("failed to read webhook body: %w", err)
+	}
+
 	expectedSig := base64.StdEncoding.EncodeToString(mac.Sum(nil))
 
 	// Validate signature to ensure payload integrity
@@ -53,9 +64,8 @@ func ParseWebhook(r *http.Request, secret string) (*WebhookEvent, error) {
 		return nil, errors.New("invalid webhook signature")
 	}
 
-	var event WebhookEvent
-	if err := json.Unmarshal(body, &event); err != nil {
-		return nil, fmt.Errorf("failed to parse webhook json: %w", err)
+	if jsonErr != nil {
+		return nil, fmt.Errorf("failed to parse webhook json: %w", jsonErr)
 	}
 
 	return &event, nil

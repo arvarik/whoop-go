@@ -2,7 +2,9 @@ package whoop
 
 import (
 	"context"
+	"fmt"
 	"net/http"
+	"strings"
 	"testing"
 	"time"
 )
@@ -53,5 +55,33 @@ func TestClient_Do_CustomErrorMapping(t *testing.T) {
 		}
 	} else {
 		t.Errorf("expected AuthError, got %T: %v", err, err)
+	}
+}
+
+func TestClientStringRedaction(t *testing.T) {
+	token := "my-secret-token"
+	client := &Client{
+		token:   token,
+		baseURL: "https://example.com",
+	}
+
+	formats := []string{"%+v", "%#v", "%v", "%s"}
+
+	for _, format := range formats {
+		t.Run(format, func(t *testing.T) {
+			output := fmt.Sprintf(format, client)
+
+			if strings.Contains(output, token) {
+				t.Errorf("Security check failed: Token leaked in %s output: %s", format, output)
+			}
+
+			if !strings.Contains(output, "token:<REDACTED>") {
+				t.Errorf("Expected output to contain redacted token placeholder for %s, got: %s", format, output)
+			}
+
+			if !strings.Contains(output, "baseURL:https://example.com") {
+				t.Errorf("Expected output to contain baseURL for %s, got: %s", format, output)
+			}
+		})
 	}
 }

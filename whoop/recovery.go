@@ -41,19 +41,8 @@ type RecoveryService struct {
 
 // GetByID fetches a single recovery score by cycle ID.
 func (s *RecoveryService) GetByID(ctx context.Context, cycleID int) (*Recovery, error) {
-	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/cycle/%d/recovery", s.client.baseURL, cycleID), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	resp, err := s.client.Do(ctx, req)
-	if err != nil {
-		return nil, err
-	}
-	defer func() { _ = resp.Body.Close() }()
-
 	var item Recovery
-	if err := json.NewDecoder(resp.Body).Decode(&item); err != nil {
+	if err := s.client.Get(ctx, fmt.Sprintf("/cycle/%d/recovery", cycleID), &item); err != nil {
 		return nil, err
 	}
 
