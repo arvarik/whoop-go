@@ -5,7 +5,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Go Report Card](https://goreportcard.com/badge/github.com/arvarik/whoop-go)](https://goreportcard.com/report/github.com/arvarik/whoop-go)
 
-`whoop-go` is a production-grade, highly robust Go client library for integrating with the WHOOP API.
+`whoop-go` is a production-grade, highly robust Go client library for integrating with the [WHOOP API v2](https://developer-dashboard.whoop.com).
 
 Engineered with resiliency in mind, it natively handles strict WHOOP rate limits (100 req/min) through transparent token buckets and exponential backoff jitter. It securely extracts HTTP webhooks using HMAC-SHA256 validations, and surfaces strongly-typed structs mapping the complex WHOOP domain (Cycles, Workouts, Sleep, and Recovery) via seamless pagination iterators.
 
@@ -54,6 +54,27 @@ make build-local
 ./bin/example
 ```
 
+### Getting an OAuth Token
+
+The WHOOP API uses the OAuth 2.0 Authorization Code flow. The [`cmd/auth/main.go`](cmd/auth/main.go) helper script handles the full flow, including **automatic token refresh** so you only need to sign in once.
+
+1. Ensure your application has `http://localhost:8081/callback` added as a **Redirect URI** in the [WHOOP Developer Dashboard](https://developer-dashboard.whoop.com). If you're using a different redirect URI, set `WHOOP_REDIRECT_URI`.
+2. Export your credentials:
+```bash
+export WHOOP_CLIENT_ID="your_client_id"
+export WHOOP_CLIENT_SECRET="your_client_secret"
+# Optional: only needed if your redirect URI differs from http://localhost:8081/callback
+# export WHOOP_REDIRECT_URI="http://localhost:3000/callback"
+```
+3. Run the auth helper:
+```bash
+go run cmd/auth/main.go
+```
+4. **First run**: Open the printed URL in your browser, sign in, and authorize. The script saves your session to `.whoop_token.json`.
+5. **Subsequent runs**: The script automatically refreshes your token using the saved session — no browser login needed.
+
+> **Note:** Access tokens expire after **1 hour**. Simply re-run the script and it will silently refresh without opening a browser. The `.whoop_token.json` file is gitignored and should never be committed.
+
 ### Verifying Credentials with cURL
 
 Before building an integration, you can validate your OAuth token directly against the WHOOP API:
@@ -64,27 +85,27 @@ export WHOOP_OAUTH_TOKEN="your_oauth2_token_here"
 
 # 1. Fetch your basic profile
 curl -s -H "Authorization: Bearer $WHOOP_OAUTH_TOKEN" \
-  "https://api.prod.whoop.com/developer/v1/user/profile/basic" | jq
+  "https://api.prod.whoop.com/developer/v2/user/profile/basic" | jq
 
 # 2. Fetch your body measurements
 curl -s -H "Authorization: Bearer $WHOOP_OAUTH_TOKEN" \
-  "https://api.prod.whoop.com/developer/v1/user/measurement/body" | jq
+  "https://api.prod.whoop.com/developer/v2/user/measurement/body" | jq
 
 # 3. List recent physiological cycles (last 10)
 curl -s -H "Authorization: Bearer $WHOOP_OAUTH_TOKEN" \
-  "https://api.prod.whoop.com/developer/v1/cycle?limit=10" | jq
+  "https://api.prod.whoop.com/developer/v2/cycle?limit=10" | jq
 
 # 4. List recent workouts
 curl -s -H "Authorization: Bearer $WHOOP_OAUTH_TOKEN" \
-  "https://api.prod.whoop.com/developer/v1/activity/workout?limit=10" | jq
+  "https://api.prod.whoop.com/developer/v2/activity/workout?limit=10" | jq
 
 # 5. List recent sleep events
 curl -s -H "Authorization: Bearer $WHOOP_OAUTH_TOKEN" \
-  "https://api.prod.whoop.com/developer/v1/activity/sleep?limit=10" | jq
+  "https://api.prod.whoop.com/developer/v2/activity/sleep?limit=10" | jq
 
 # 6. List recent recovery scores
 curl -s -H "Authorization: Bearer $WHOOP_OAUTH_TOKEN" \
-  "https://api.prod.whoop.com/developer/v1/recovery?limit=10" | jq
+  "https://api.prod.whoop.com/developer/v2/recovery?limit=10" | jq
 ```
 
 ### Under the Hood
@@ -121,7 +142,7 @@ http.HandleFunc("/whoop/webhook", func(w http.ResponseWriter, r *http.Request) {
         return
     }
 
-    log.Printf("Received genuine webhook event! Type: %s, ID: %d", event.Type, event.ID)
+    log.Printf("Received genuine webhook event! Type: %s, ID: %s", event.Type, event.ID)
 })
 ```
 
@@ -167,6 +188,17 @@ Run test coverage utilizing mocked REST architectures safely disconnected from L
 ```bash
 make test
 ```
+
+## Migrating from v0.2.0 → v0.3.0 (v1 → v2 API)
+
+As of `v0.3.0`, this library targets the **WHOOP API v2**. The v1 API has been deprecated by WHOOP — several v1 endpoints (Sleep, Workout, Recovery) now return HTTP 404.
+
+Key breaking changes:
+- `Sleep.ID` and `Workout.ID` changed from `int` → `string` (UUIDs)
+- `Recovery.SleepID` changed from `int` → `string` (UUID)
+- `WebhookEvent.ID` changed from `int` → `string` (UUID)
+- Workout zone durations JSON key renamed from `zone_duration` → `zone_durations`
+- New fields added: `ScoreState`, `SportName`, `V1ID`, `CycleID` (on Sleep), and `ScopeOffline`
 
 ## License
 

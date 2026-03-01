@@ -20,8 +20,8 @@ func TestRecoveryService_GetByID(t *testing.T) {
 	if recovery.CycleID != 123 {
 		t.Errorf("expected CycleID 123, got %d", recovery.CycleID)
 	}
-	if recovery.SleepID != 789 {
-		t.Errorf("expected SleepID 789, got %d", recovery.SleepID)
+	if recovery.SleepID != "slp-uuid-789" {
+		t.Errorf("expected SleepID slp-uuid-789, got %s", recovery.SleepID)
 	}
 	if recovery.UserID != 999 {
 		t.Errorf("expected UserID 999, got %d", recovery.UserID)

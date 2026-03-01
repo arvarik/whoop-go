@@ -12,13 +12,13 @@ func TestWorkoutService_GetByID(t *testing.T) {
 
 	client := newMockClient(ts)
 
-	workout, err := client.Workout.GetByID(context.Background(), 456)
+	workout, err := client.Workout.GetByID(context.Background(), "wkt-uuid-456")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	if workout.ID != 456 {
-		t.Errorf("expected ID 456, got %d", workout.ID)
+	if workout.ID != "wkt-uuid-456" {
+		t.Errorf("expected ID wkt-uuid-456, got %s", workout.ID)
 	}
 	if workout.UserID != 999 {
 		t.Errorf("expected UserID 999, got %d", workout.UserID)
@@ -35,8 +35,8 @@ func TestWorkoutService_GetByID(t *testing.T) {
 	if workout.Score.MaxHeartRate != 190 {
 		t.Errorf("expected max heart rate 190, got %d", workout.Score.MaxHeartRate)
 	}
-	if workout.Score.DistanceMeter != 5000.0 {
-		t.Errorf("expected distance 5000.0, got %f", workout.Score.DistanceMeter)
+	if workout.Score.DistanceMeter == nil || *workout.Score.DistanceMeter != 5000.0 {
+		t.Errorf("expected distance 5000.0, got %v", workout.Score.DistanceMeter)
 	}
 	if workout.Score.ZoneDuration == nil {
 		t.Fatal("expected zone duration to be populated")
@@ -60,8 +60,8 @@ func TestWorkoutService_List_Pagination(t *testing.T) {
 	if len(page1.Records) != 1 {
 		t.Fatalf("expected 1 record on page 1, got %d", len(page1.Records))
 	}
-	if page1.Records[0].ID != 456 {
-		t.Errorf("expected workout ID 456, got %d", page1.Records[0].ID)
+	if page1.Records[0].ID != "wkt-uuid-456" {
+		t.Errorf("expected workout ID wkt-uuid-456, got %s", page1.Records[0].ID)
 	}
 	if page1.NextToken != "page2" {
 		t.Errorf("expected next token 'page2', got '%s'", page1.NextToken)

@@ -12,13 +12,13 @@ func TestSleepService_GetByID(t *testing.T) {
 
 	client := newMockClient(ts)
 
-	sleep, err := client.Sleep.GetByID(context.Background(), 789)
+	sleep, err := client.Sleep.GetByID(context.Background(), "slp-uuid-789")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	if sleep.ID != 789 {
-		t.Errorf("expected ID 789, got %d", sleep.ID)
+	if sleep.ID != "slp-uuid-789" {
+		t.Errorf("expected ID slp-uuid-789, got %s", sleep.ID)
 	}
 	if sleep.UserID != 999 {
 		t.Errorf("expected UserID 999, got %d", sleep.UserID)
@@ -63,8 +63,8 @@ func TestSleepService_List_Pagination(t *testing.T) {
 	if len(page1.Records) != 1 {
 		t.Fatalf("expected 1 record on page 1, got %d", len(page1.Records))
 	}
-	if page1.Records[0].ID != 789 {
-		t.Errorf("expected sleep ID 789, got %d", page1.Records[0].ID)
+	if page1.Records[0].ID != "slp-uuid-789" {
+		t.Errorf("expected sleep ID slp-uuid-789, got %s", page1.Records[0].ID)
 	}
 	if page1.NextToken != "sleep-p2" {
 		t.Errorf("expected next token 'sleep-p2', got '%s'", page1.NextToken)

@@ -14,7 +14,7 @@ import (
 // WebhookEvent represents a "Skinny Webhook" payload from WHOOP.
 type WebhookEvent struct {
 	UserID  int    `json:"user_id"`
-	ID      int    `json:"id"`
+	ID      string `json:"id"`
 	Type    string `json:"type"`
 	TraceID string `json:"trace_id"`
 }

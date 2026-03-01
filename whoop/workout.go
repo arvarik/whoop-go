@@ -11,7 +11,8 @@ import (
 
 // Workout represents a tracked workout session.
 type Workout struct {
-	ID             int           `json:"id"`
+	ID             string        `json:"id"`
+	V1ID           *int          `json:"v1_id,omitempty"`
 	UserID         int           `json:"user_id"`
 	CreatedAt      time.Time     `json:"created_at"`
 	UpdatedAt      time.Time     `json:"updated_at"`
@@ -19,6 +20,8 @@ type Workout struct {
 	End            time.Time     `json:"end"`
 	TimezoneOffset string        `json:"timezone_offset"`
 	SportID        int           `json:"sport_id"`
+	SportName      string        `json:"sport_name"`
+	ScoreState     string        `json:"score_state"`
 	Score          *WorkoutScore `json:"score,omitempty"`
 }
 
@@ -29,10 +32,10 @@ type WorkoutScore struct {
 	MaxHeartRate        int            `json:"max_heart_rate"`
 	Kilojoule           float64        `json:"kilojoule"`
 	PercentRecorded     float64        `json:"percent_recorded"`
-	DistanceMeter       float64        `json:"distance_meter"`
-	AltitudeGainMeter   float64        `json:"altitude_gain_meter"`
-	AltitudeChangeMeter float64        `json:"altitude_change_meter"`
-	ZoneDuration        *ZoneDurations `json:"zone_duration"`
+	DistanceMeter       *float64       `json:"distance_meter"`
+	AltitudeGainMeter   *float64       `json:"altitude_gain_meter"`
+	AltitudeChangeMeter *float64       `json:"altitude_change_meter"`
+	ZoneDuration        *ZoneDurations `json:"zone_durations"`
 }
 
 // ZoneDurations breaks down the duration spent in different heart rate zones.
@@ -50,10 +53,10 @@ type WorkoutService struct {
 	client *Client
 }
 
-// GetByID fetches a single workout session by its ID.
-func (s *WorkoutService) GetByID(ctx context.Context, id int) (*Workout, error) {
+// GetByID fetches a single workout session by its UUID.
+func (s *WorkoutService) GetByID(ctx context.Context, id string) (*Workout, error) {
 	var item Workout
-	if err := s.client.Get(ctx, fmt.Sprintf("/activity/workout/%d", id), &item); err != nil {
+	if err := s.client.Get(ctx, fmt.Sprintf("/activity/workout/%s", id), &item); err != nil {
 		return nil, err
 	}
 
