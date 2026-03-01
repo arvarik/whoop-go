@@ -22,8 +22,5 @@ linters:
         - fieldalignment # Struct field order matches JSON API schema for readability
         - shadow         # Too noisy for idiomatic Go error handling patterns
 
-issues:
-  exclude-use-default: true
-
 run:
   timeout: 5m
