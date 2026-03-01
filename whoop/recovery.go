@@ -12,12 +12,13 @@ import (
 
 // Recovery represents the quantified recovery status of the user for a given cycle.
 type Recovery struct {
-	CycleID   int            `json:"cycle_id"`
-	SleepID   int            `json:"sleep_id"`
-	UserID    int            `json:"user_id"`
-	CreatedAt time.Time      `json:"created_at"`
-	UpdatedAt time.Time      `json:"updated_at"`
-	Score     *RecoveryScore `json:"score,omitempty"`
+	CycleID    int            `json:"cycle_id"`
+	SleepID    string         `json:"sleep_id"`
+	UserID     int            `json:"user_id"`
+	CreatedAt  time.Time      `json:"created_at"`
+	UpdatedAt  time.Time      `json:"updated_at"`
+	ScoreState string         `json:"score_state"`
+	Score      *RecoveryScore `json:"score,omitempty"`
 }
 
 // RecoveryScore contains the metrics formulating the recovery calculation.

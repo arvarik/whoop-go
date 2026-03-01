@@ -12,14 +12,15 @@ import (
 
 // Cycle represents a physiological cycle (typically an awake period to the next awake period).
 type Cycle struct {
-	ID             int       `json:"id"`
-	UserID         int       `json:"user_id"`
-	CreatedAt      time.Time `json:"created_at"`
-	UpdatedAt      time.Time `json:"updated_at"`
-	Start          time.Time `json:"start"`
-	End            time.Time `json:"end,omitempty"`
-	TimezoneOffset string    `json:"timezone_offset"`
-	Score          *Score    `json:"score,omitempty"`
+	ID             int        `json:"id"`
+	UserID         int        `json:"user_id"`
+	CreatedAt      time.Time  `json:"created_at"`
+	UpdatedAt      time.Time  `json:"updated_at"`
+	Start          time.Time  `json:"start"`
+	End            *time.Time `json:"end"`
+	TimezoneOffset string     `json:"timezone_offset"`
+	ScoreState     string     `json:"score_state"`
+	Score          *Score     `json:"score,omitempty"`
 }
 
 // Score summarizes physiological strains within a Cycle.

@@ -5,6 +5,7 @@ main
 
 # Environment (credentials)
 .env
+.whoop_token.json
 
 # IDE and editor files
 .idea/

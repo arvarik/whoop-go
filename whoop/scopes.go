@@ -4,6 +4,9 @@ package whoop
 type Scope string
 
 const (
+	// ScopeOffline enables refresh token issuance for long-lived sessions.
+	ScopeOffline Scope = "offline"
+
 	// ScopeReadRecovery allows reading the user's recovery data.
 	ScopeReadRecovery Scope = "read:recovery"
 

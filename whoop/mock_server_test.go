@@ -29,6 +29,7 @@ func newMockServer(t *testing.T) *httptest.Server {
 			"start": "2026-02-24T05:00:00Z",
 			"end": "2026-02-24T10:00:00Z",
 			"timezone_offset": "-08:00",
+			"score_state": "SCORED",
 			"score": {
 				"strain": 12.4,
 				"kilojoule": 2048.5,
@@ -52,7 +53,7 @@ func newMockServer(t *testing.T) *httptest.Server {
 			_, _ = w.Write([]byte(`{
 				"records": [
 					{
-						"id": 456,
+						"id": "wkt-uuid-456",
 						"user_id": 999,
 						"created_at": "2026-02-24T14:00:00Z",
 						"updated_at": "2026-02-24T15:00:00Z",
@@ -60,6 +61,8 @@ func newMockServer(t *testing.T) *httptest.Server {
 						"end": "2026-02-24T15:00:00Z",
 						"timezone_offset": "-08:00",
 						"sport_id": 1,
+						"sport_name": "running",
+						"score_state": "SCORED",
 						"score": {
 							"strain": 14.2,
 							"average_heart_rate": 150,
@@ -69,7 +72,7 @@ func newMockServer(t *testing.T) *httptest.Server {
 							"distance_meter": 5000.0,
 							"altitude_gain_meter": 100.0,
 							"altitude_change_meter": 10.0,
-							"zone_duration": {
+							"zone_durations": {
 								"zone_zero_milli": 1000,
 								"zone_one_milli": 2000,
 								"zone_two_milli": 3000,
@@ -135,10 +138,11 @@ func newMockServer(t *testing.T) *httptest.Server {
 	})
 
 	// 8. Sleep - GetByID Mock
-	mux.HandleFunc("/activity/sleep/789", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/activity/sleep/slp-uuid-789", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		_, _ = w.Write([]byte(`{
-			"id": 789,
+			"id": "slp-uuid-789",
+			"cycle_id": 123,
 			"user_id": 999,
 			"created_at": "2026-02-24T06:00:00Z",
 			"updated_at": "2026-02-24T07:00:00Z",
@@ -146,6 +150,7 @@ func newMockServer(t *testing.T) *httptest.Server {
 			"end": "2026-02-24T06:00:00Z",
 			"timezone_offset": "-08:00",
 			"nap": false,
+			"score_state": "SCORED",
 			"score": {
 				"stage_summary": {
 					"total_in_bed_time_milli": 28800000,
@@ -177,7 +182,7 @@ func newMockServer(t *testing.T) *httptest.Server {
 		token := r.URL.Query().Get("nextToken")
 		if token == "" {
 			_, _ = w.Write([]byte(`{
-				"records": [{"id": 789, "user_id": 999, "nap": false}],
+				"records": [{"id": "slp-uuid-789", "cycle_id": 123, "user_id": 999, "nap": false}],
 				"next_token": "sleep-p2"
 			}`))
 		} else if token == "sleep-p2" {
@@ -193,10 +198,11 @@ func newMockServer(t *testing.T) *httptest.Server {
 		w.Header().Set("Content-Type", "application/json")
 		_, _ = w.Write([]byte(`{
 			"cycle_id": 123,
-			"sleep_id": 789,
+			"sleep_id": "slp-uuid-789",
 			"user_id": 999,
 			"created_at": "2026-02-24T06:00:00Z",
 			"updated_at": "2026-02-24T07:00:00Z",
+			"score_state": "SCORED",
 			"score": {
 				"user_calibrating": false,
 				"recovery_score": 85.5,
@@ -214,7 +220,7 @@ func newMockServer(t *testing.T) *httptest.Server {
 		token := r.URL.Query().Get("nextToken")
 		if token == "" {
 			_, _ = w.Write([]byte(`{
-				"records": [{"cycle_id": 123, "sleep_id": 789, "user_id": 999}],
+				"records": [{"cycle_id": 123, "sleep_id": "slp-uuid-789", "user_id": 999}],
 				"next_token": "rec-p2"
 			}`))
 		} else if token == "rec-p2" {
@@ -226,10 +232,10 @@ func newMockServer(t *testing.T) *httptest.Server {
 	})
 
 	// 12. Workout - GetByID Mock
-	mux.HandleFunc("/activity/workout/456", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/activity/workout/wkt-uuid-456", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		_, _ = w.Write([]byte(`{
-			"id": 456,
+			"id": "wkt-uuid-456",
 			"user_id": 999,
 			"created_at": "2026-02-24T14:00:00Z",
 			"updated_at": "2026-02-24T15:00:00Z",
@@ -237,6 +243,8 @@ func newMockServer(t *testing.T) *httptest.Server {
 			"end": "2026-02-24T15:00:00Z",
 			"timezone_offset": "-08:00",
 			"sport_id": 1,
+			"sport_name": "running",
+			"score_state": "SCORED",
 			"score": {
 				"strain": 14.2,
 				"average_heart_rate": 150,
@@ -246,7 +254,7 @@ func newMockServer(t *testing.T) *httptest.Server {
 				"distance_meter": 5000.0,
 				"altitude_gain_meter": 100.0,
 				"altitude_change_meter": 10.0,
-				"zone_duration": {
+				"zone_durations": {
 					"zone_zero_milli": 1000,
 					"zone_one_milli": 2000,
 					"zone_two_milli": 3000,

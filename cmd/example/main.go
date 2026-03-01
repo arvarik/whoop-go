@@ -29,7 +29,7 @@ func main() {
 
 	// Create a worker pool to process webhooks concurrently but with a limit
 	// This prevents unbounded goroutine creation during traffic spikes
-	jobQueue := make(chan int, 100)
+	jobQueue := make(chan string, 100)
 	// Start 5 workers
 	for i := 0; i < 5; i++ {
 		go worker(client, jobQueue)
@@ -42,7 +42,7 @@ func main() {
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
 
-func webhookHandler(client *whoop.Client, webhookSecret string, jobQueue chan<- int) http.HandlerFunc {
+func webhookHandler(client *whoop.Client, webhookSecret string, jobQueue chan<- string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// 1. Securely parse and validate the HMAC-SHA256 skinny payload
 		event, err := whoop.ParseWebhook(r, webhookSecret)
@@ -52,7 +52,7 @@ func webhookHandler(client *whoop.Client, webhookSecret string, jobQueue chan<- 
 			return
 		}
 
-		log.Printf("Received genuine webhook event! Type: %s, ID: %d", event.Type, event.ID)
+		log.Printf("Received genuine webhook event! Type: %s, ID: %s", event.Type, event.ID)
 
 		// Acknowledge the webhook rapidly to WHOOP before processing the heavy REST pulls
 		w.WriteHeader(http.StatusOK)
@@ -64,13 +64,13 @@ func webhookHandler(client *whoop.Client, webhookSecret string, jobQueue chan<- 
 			case jobQueue <- event.ID:
 				// Successfully queued
 			default:
-				log.Printf("Worker pool full, dropping workout update for ID %d", event.ID)
+				log.Printf("Worker pool full, dropping workout update for ID %s", event.ID)
 			}
 		}
 	}
 }
 
-func worker(client *whoop.Client, jobQueue <-chan int) {
+func worker(client *whoop.Client, jobQueue <-chan string) {
 	for workoutID := range jobQueue {
 		processWorkout(client, workoutID)
 	}
@@ -78,26 +78,30 @@ func worker(client *whoop.Client, jobQueue <-chan int) {
 
 // processWorkout utilizes the robust Client setup to fetch the WHOOP Workout by its ID
 // dynamically triggered off a Webhook execution string.
-func processWorkout(client *whoop.Client, workoutID int) {
+func processWorkout(client *whoop.Client, workoutID string) {
 	// 30 second context for standard API interactions
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
 	workout, err := client.Workout.GetByID(ctx, workoutID)
 	if err != nil {
-		log.Printf("[Webhook Worker] Failed to fetch REST API for Workout ID %d: %v", workoutID, err)
+		log.Printf("[Webhook Worker] Failed to fetch REST API for Workout ID %s: %v", workoutID, err)
 		return
 	}
 
 	if workout.Score != nil {
-		log.Printf("[Webhook Worker] Workout Processed: ID=%d, Strain=%.2f, MaxHR=%d, Distance=%.2fm",
+		var dist float64
+		if workout.Score.DistanceMeter != nil {
+			dist = *workout.Score.DistanceMeter
+		}
+		log.Printf("[Webhook Worker] Workout Processed: ID=%s, Strain=%.2f, MaxHR=%d, Distance=%.2fm",
 			workout.ID,
 			workout.Score.Strain,
 			workout.Score.MaxHeartRate,
-			workout.Score.DistanceMeter,
+			dist,
 		)
 	} else {
-		log.Printf("[Webhook Worker] Workout Processed: ID=%d (Processing Score...)", workout.ID)
+		log.Printf("[Webhook Worker] Workout Processed: ID=%s (Processing Score...)", workout.ID)
 	}
 
 	// TODO: Save this `workout` payload locally to a database or generic store!

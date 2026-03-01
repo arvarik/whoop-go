@@ -22,7 +22,7 @@ func signPayload(body []byte, secret string) string {
 
 func TestParseWebhook_ValidSignature(t *testing.T) {
 	secret := "test-webhook-secret"
-	payload := `{"user_id":999,"id":456,"type":"workout.updated","trace_id":"abc-def"}`
+	payload := `{"user_id":999,"id":"wkt-uuid-456","type":"workout.updated","trace_id":"abc-def"}`
 	sig := signPayload([]byte(payload), secret)
 
 	req := httptest.NewRequest(http.MethodPost, "/whoop/webhook", strings.NewReader(payload))
@@ -36,8 +36,8 @@ func TestParseWebhook_ValidSignature(t *testing.T) {
 	if event.UserID != 999 {
 		t.Errorf("expected UserID 999, got %d", event.UserID)
 	}
-	if event.ID != 456 {
-		t.Errorf("expected ID 456, got %d", event.ID)
+	if event.ID != "wkt-uuid-456" {
+		t.Errorf("expected ID wkt-uuid-456, got %s", event.ID)
 	}
 	if event.Type != "workout.updated" {
 		t.Errorf("expected type 'workout.updated', got %s", event.Type)
@@ -48,7 +48,7 @@ func TestParseWebhook_ValidSignature(t *testing.T) {
 }
 
 func TestParseWebhook_InvalidSignature(t *testing.T) {
-	payload := `{"user_id":999,"id":456,"type":"workout.updated"}`
+	payload := `{"user_id":999,"id":"wkt-uuid-456","type":"workout.updated"}`
 
 	req := httptest.NewRequest(http.MethodPost, "/whoop/webhook", strings.NewReader(payload))
 	req.Header.Set("X-Whoop-Signature", "definitely-wrong-signature")

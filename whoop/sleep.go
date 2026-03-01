@@ -12,7 +12,9 @@ import (
 
 // Sleep represents a single sleep event.
 type Sleep struct {
-	ID             int         `json:"id"`
+	ID             string      `json:"id"`
+	CycleID        int         `json:"cycle_id"`
+	V1ID           *int        `json:"v1_id,omitempty"`
 	UserID         int         `json:"user_id"`
 	CreatedAt      time.Time   `json:"created_at"`
 	UpdatedAt      time.Time   `json:"updated_at"`
@@ -20,6 +22,7 @@ type Sleep struct {
 	End            time.Time   `json:"end"`
 	TimezoneOffset string      `json:"timezone_offset"`
 	Nap            bool        `json:"nap"`
+	ScoreState     string      `json:"score_state"`
 	Score          *SleepScore `json:"score,omitempty"`
 }
 
@@ -62,10 +65,10 @@ type SleepService struct {
 	listURLErr  error
 }
 
-// GetByID fetches a single sleep event by its ID.
-func (s *SleepService) GetByID(ctx context.Context, id int) (*Sleep, error) {
+// GetByID fetches a single sleep event by its UUID.
+func (s *SleepService) GetByID(ctx context.Context, id string) (*Sleep, error) {
 	var item Sleep
-	if err := s.client.Get(ctx, fmt.Sprintf("/activity/sleep/%d", id), &item); err != nil {
+	if err := s.client.Get(ctx, fmt.Sprintf("/activity/sleep/%s", id), &item); err != nil {
 		return nil, err
 	}
 
