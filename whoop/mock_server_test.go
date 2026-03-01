@@ -49,7 +49,8 @@ func newMockServer(t *testing.T) *httptest.Server {
 		w.WriteHeader(http.StatusOK)
 
 		token := r.URL.Query().Get("nextToken")
-		if token == "" {
+		switch token {
+		case "":
 			_, _ = w.Write([]byte(`{
 				"records": [
 					{
@@ -85,12 +86,12 @@ func newMockServer(t *testing.T) *httptest.Server {
 				],
 				"next_token": "page2"
 			}`))
-		} else if token == "page2" {
+		case "page2":
 			_, _ = w.Write([]byte(`{
 				"records": [],
 				"next_token": ""
 			}`))
-		} else {
+		default:
 			t.Fatalf("unexpected token requested: %s", token)
 		}
 	})
@@ -180,12 +181,13 @@ func newMockServer(t *testing.T) *httptest.Server {
 	mux.HandleFunc("/activity/sleep", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		token := r.URL.Query().Get("nextToken")
-		if token == "" {
+		switch token {
+		case "":
 			_, _ = w.Write([]byte(`{
 				"records": [{"id": "slp-uuid-789", "cycle_id": 123, "user_id": 999, "nap": false}],
 				"next_token": "sleep-p2"
 			}`))
-		} else if token == "sleep-p2" {
+		case "sleep-p2":
 			_, _ = w.Write([]byte(`{
 				"records": [],
 				"next_token": ""
@@ -218,12 +220,13 @@ func newMockServer(t *testing.T) *httptest.Server {
 	mux.HandleFunc("/recovery", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		token := r.URL.Query().Get("nextToken")
-		if token == "" {
+		switch token {
+		case "":
 			_, _ = w.Write([]byte(`{
 				"records": [{"cycle_id": 123, "sleep_id": "slp-uuid-789", "user_id": 999}],
 				"next_token": "rec-p2"
 			}`))
-		} else if token == "rec-p2" {
+		case "rec-p2":
 			_, _ = w.Write([]byte(`{
 				"records": [],
 				"next_token": ""
