@@ -131,7 +131,7 @@ func runAuthFlow(clientID, clientSecret string) {
 		saveToken(tok)
 		printToken(tok)
 
-		fmt.Fprintf(w, "Success! You can close this window and check your terminal.")
+		_, _ = fmt.Fprintf(w, "Success! You can close this window and check your terminal.")
 
 		go func() {
 			time.Sleep(1 * time.Second)
@@ -157,7 +157,7 @@ func exchangeToken(data url.Values) (*tokenData, error) {
 	if err != nil {
 		return nil, fmt.Errorf("sending request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	var result tokenData
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {

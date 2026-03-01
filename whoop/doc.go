@@ -1,4 +1,4 @@
-// Package whoop provides a production-grade Go client for the WHOOP Developer API.
+// Package whoop provides a production-grade Go client for the WHOOP Developer API (v2).
 //
 // The client handles authentication, rate limiting (100 req/min via token bucket),
 // automatic retries with exponential backoff on 429 responses, webhook signature

@@ -72,13 +72,14 @@ func TestCycleService_List_Pagination(t *testing.T) {
 		token := r.URL.Query().Get("nextToken")
 		w.Header().Set("Content-Type", "application/json")
 
-		if token == "" {
+		switch token {
+		case "":
 			// First page
 			_, _ = w.Write([]byte(`{
 				"records": [{"id": 1, "user_id": 123}],
 				"next_token": "page2"
 			}`))
-		} else if token == "page2" {
+		case "page2":
 			// Second page
 			_, _ = w.Write([]byte(`{
 				"records": [{"id": 2, "user_id": 123}],

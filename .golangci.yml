@@ -1,22 +1,26 @@
+version: "2"
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
+
 linters:
   enable:
     - errcheck
     - govet
     - staticcheck
     - unused
-    - gosimple
     - ineffassign
-    - gofmt
-    - goimports
 
-linters-settings:
-  errcheck:
-    check-blank: false
-  govet:
-    enable-all: true
-    disable:
-      - fieldalignment # Struct field order matches JSON API schema for readability
-      - shadow         # Too noisy for idiomatic Go error handling patterns
+  settings:
+    errcheck:
+      check-blank: false
+    govet:
+      enable-all: true
+      disable:
+        - fieldalignment # Struct field order matches JSON API schema for readability
+        - shadow         # Too noisy for idiomatic Go error handling patterns
 
 issues:
   exclude-use-default: true

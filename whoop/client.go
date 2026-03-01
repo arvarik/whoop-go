@@ -14,7 +14,7 @@ const (
 	defaultBaseURL = "https://api.prod.whoop.com/developer/v2"
 
 	// Version is the semantic version of this library.
-	Version = "0.3.0"
+	Version = "1.0.0"
 
 	userAgent = "whoop-go/" + Version
 )
