@@ -100,7 +100,9 @@ func runAuthFlow(clientID, clientSecret string) {
 			http.Error(w, msg, http.StatusBadRequest)
 			go func() {
 				time.Sleep(1 * time.Second)
-				server.Shutdown(context.Background())
+				if err := server.Shutdown(context.Background()); err != nil {
+					log.Printf("Server shutdown error: %v", err)
+				}
 			}()
 			return
 		}
@@ -133,7 +135,9 @@ func runAuthFlow(clientID, clientSecret string) {
 
 		go func() {
 			time.Sleep(1 * time.Second)
-			server.Shutdown(context.Background())
+			if err := server.Shutdown(context.Background()); err != nil {
+				log.Printf("Server shutdown error: %v", err)
+			}
 		}()
 	})
 
