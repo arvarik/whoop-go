@@ -111,13 +111,13 @@ func (c *Client) Do(ctx context.Context, req *http.Request) (*http.Response, err
 		// Handle 429 Too Many Requests
 		if attempt >= c.maxRetries {
 			// Drain and close body before returning error to prevent leaks
-			body, _ := io.ReadAll(resp.Body)
+			body, _ := io.ReadAll(io.LimitReader(resp.Body, 4096))
 			_ = resp.Body.Close()
 			return nil, mapHTTPError(resp, body)
 		}
 
 		// Drain body to reuse connection
-		_, _ = io.ReadAll(resp.Body)
+		_, _ = io.Copy(io.Discard, io.LimitReader(resp.Body, 4096))
 		_ = resp.Body.Close()
 
 		// Prefer server-suggested Retry-After if present, else exponential backoff.
@@ -140,7 +140,7 @@ func (c *Client) Do(ctx context.Context, req *http.Request) (*http.Response, err
 
 	// Handle standard HTTP errors (4xx, 5xx).
 	if resp.StatusCode >= 400 {
-		body, _ := io.ReadAll(resp.Body)
+		body, _ := io.ReadAll(io.LimitReader(resp.Body, 4096))
 		_ = resp.Body.Close()
 		return nil, mapHTTPError(resp, body)
 	}
