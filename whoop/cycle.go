@@ -2,9 +2,7 @@ package whoop
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"net/http"
 	"net/url"
 	"sync"
 	"time"
@@ -59,22 +57,8 @@ func (s *CycleService) List(ctx context.Context, opts *ListOptions) (*CyclePage,
 		return nil, s.listURLErr
 	}
 
-	u := *s.listURL
-	opts.encode(&u)
-
-	req, err := http.NewRequest(http.MethodGet, u.String(), nil)
+	page, err := getPaginated[Cycle](ctx, s.client, s.listURL, opts)
 	if err != nil {
-		return nil, err
-	}
-
-	resp, err := s.client.Do(ctx, req)
-	if err != nil {
-		return nil, err
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	var page paginatedResponse[Cycle]
-	if err := json.NewDecoder(resp.Body).Decode(&page); err != nil {
 		return nil, err
 	}
 
