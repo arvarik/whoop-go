@@ -2,10 +2,9 @@ package whoop
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"net/http"
 	"net/url"
+	"sync"
 	"time"
 )
 
@@ -51,6 +50,10 @@ type ZoneDurations struct {
 // WorkoutService handles communication with the workout related methods.
 type WorkoutService struct {
 	client *Client
+
+	listURLOnce sync.Once
+	listURL     *url.URL
+	listURLErr  error
 }
 
 // GetByID fetches a single workout session by its UUID.
@@ -65,26 +68,15 @@ func (s *WorkoutService) GetByID(ctx context.Context, id string) (*Workout, erro
 
 // List fetches a paginated collection of workout sessions.
 func (s *WorkoutService) List(ctx context.Context, opts *ListOptions) (*WorkoutPage, error) {
-	u, err := url.Parse(s.client.baseURL + "/activity/workout")
-	if err != nil {
-		return nil, err
+	s.listURLOnce.Do(func() {
+		s.listURL, s.listURLErr = url.Parse(s.client.baseURL + "/activity/workout")
+	})
+	if s.listURLErr != nil {
+		return nil, s.listURLErr
 	}
 
-	opts.encode(u)
-
-	req, err := http.NewRequest(http.MethodGet, u.String(), nil)
+	page, err := getPaginated[Workout](ctx, s.client, s.listURL, opts)
 	if err != nil {
-		return nil, err
-	}
-
-	resp, err := s.client.Do(ctx, req)
-	if err != nil {
-		return nil, err
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	var page paginatedResponse[Workout]
-	if err := json.NewDecoder(resp.Body).Decode(&page); err != nil {
 		return nil, err
 	}
 
