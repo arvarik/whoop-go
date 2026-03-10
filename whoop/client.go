@@ -115,6 +115,7 @@ func (c *Client) Do(ctx context.Context, req *http.Request) (*http.Response, err
 
 			if closeErr := resp.Body.Close(); closeErr != nil {
 				// Intentionally ignore the close error since we are returning the primary HTTP error
+				_ = closeErr
 			}
 			return nil, mapHTTPError(resp, body)
 		}
@@ -123,6 +124,7 @@ func (c *Client) Do(ctx context.Context, req *http.Request) (*http.Response, err
 		_, _ = io.Copy(io.Discard, io.LimitReader(resp.Body, 4096))
 		if closeErr := resp.Body.Close(); closeErr != nil {
 			// Intentionally ignore the close error to continue the retry loop
+			_ = closeErr
 		}
 
 		// Prefer server-suggested Retry-After if present, else exponential backoff.
@@ -149,6 +151,7 @@ func (c *Client) Do(ctx context.Context, req *http.Request) (*http.Response, err
 
 		if closeErr := resp.Body.Close(); closeErr != nil {
 			// Intentionally ignore the close error since we are returning the primary HTTP error
+			_ = closeErr
 		}
 		return nil, mapHTTPError(resp, body)
 	}
