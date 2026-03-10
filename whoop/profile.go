@@ -27,7 +27,7 @@ type UserService struct {
 }
 
 // GetBasicProfile fetches the athlete's basic profile.
-func (s *UserService) GetBasicProfile(ctx context.Context) (*BasicProfile, error) {
+func (s *UserService) GetBasicProfile(ctx context.Context) (profile *BasicProfile, err error) {
 	req, err := http.NewRequest(http.MethodGet, s.client.baseURL+"/user/profile/basic", nil)
 	if err != nil {
 		return nil, err
@@ -37,18 +37,22 @@ func (s *UserService) GetBasicProfile(ctx context.Context) (*BasicProfile, error
 	if err != nil {
 		return nil, err
 	}
-	defer func() { _ = resp.Body.Close() }()
+	defer func() {
+		if closeErr := resp.Body.Close(); closeErr != nil && err == nil {
+			err = closeErr
+		}
+	}()
 
-	var profile BasicProfile
-	if err := json.NewDecoder(resp.Body).Decode(&profile); err != nil {
+	var p BasicProfile
+	if err = json.NewDecoder(resp.Body).Decode(&p); err != nil {
 		return nil, err
 	}
 
-	return &profile, nil
+	return &p, nil
 }
 
 // GetBodyMeasurement fetches the athlete's body measurements.
-func (s *UserService) GetBodyMeasurement(ctx context.Context) (*BodyMeasurement, error) {
+func (s *UserService) GetBodyMeasurement(ctx context.Context) (measurement *BodyMeasurement, err error) {
 	req, err := http.NewRequest(http.MethodGet, s.client.baseURL+"/user/measurement/body", nil)
 	if err != nil {
 		return nil, err
@@ -58,12 +62,16 @@ func (s *UserService) GetBodyMeasurement(ctx context.Context) (*BodyMeasurement,
 	if err != nil {
 		return nil, err
 	}
-	defer func() { _ = resp.Body.Close() }()
+	defer func() {
+		if closeErr := resp.Body.Close(); closeErr != nil && err == nil {
+			err = closeErr
+		}
+	}()
 
-	var measurement BodyMeasurement
-	if err := json.NewDecoder(resp.Body).Decode(&measurement); err != nil {
+	var m BodyMeasurement
+	if err = json.NewDecoder(resp.Body).Decode(&m); err != nil {
 		return nil, err
 	}
 
-	return &measurement, nil
+	return &m, nil
 }
