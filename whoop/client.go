@@ -112,13 +112,20 @@ func (c *Client) Do(ctx context.Context, req *http.Request) (*http.Response, err
 		if attempt >= c.maxRetries {
 			// Drain and close body before returning error to prevent leaks
 			body, _ := io.ReadAll(io.LimitReader(resp.Body, 4096))
-			_ = resp.Body.Close()
+
+			if closeErr := resp.Body.Close(); closeErr != nil {
+				// Intentionally ignore the close error since we are returning the primary HTTP error
+				_ = closeErr
+			}
 			return nil, mapHTTPError(resp, body)
 		}
 
 		// Drain body to reuse connection
 		_, _ = io.Copy(io.Discard, io.LimitReader(resp.Body, 4096))
-		_ = resp.Body.Close()
+		if closeErr := resp.Body.Close(); closeErr != nil {
+			// Intentionally ignore the close error to continue the retry loop
+			_ = closeErr
+		}
 
 		// Prefer server-suggested Retry-After if present, else exponential backoff.
 		backoff := calculateBackoff(attempt, c.backoffBase, c.backoffMax)
@@ -141,7 +148,11 @@ func (c *Client) Do(ctx context.Context, req *http.Request) (*http.Response, err
 	// Handle standard HTTP errors (4xx, 5xx).
 	if resp.StatusCode >= 400 {
 		body, _ := io.ReadAll(io.LimitReader(resp.Body, 4096))
-		_ = resp.Body.Close()
+
+		if closeErr := resp.Body.Close(); closeErr != nil {
+			// Intentionally ignore the close error since we are returning the primary HTTP error
+			_ = closeErr
+		}
 		return nil, mapHTTPError(resp, body)
 	}
 
@@ -149,7 +160,7 @@ func (c *Client) Do(ctx context.Context, req *http.Request) (*http.Response, err
 }
 
 // Get performs a GET request to the specified path and decodes the response into v.
-func (c *Client) Get(ctx context.Context, path string, v any) error {
+func (c *Client) Get(ctx context.Context, path string, v any) (err error) {
 	req, err := http.NewRequest(http.MethodGet, c.baseURL+path, nil)
 	if err != nil {
 		return err
@@ -159,10 +170,14 @@ func (c *Client) Get(ctx context.Context, path string, v any) error {
 	if err != nil {
 		return err
 	}
-	defer func() { _ = resp.Body.Close() }()
+	defer func() {
+		if closeErr := resp.Body.Close(); closeErr != nil && err == nil {
+			err = closeErr
+		}
+	}()
 
 	if v != nil {
-		if err := json.NewDecoder(resp.Body).Decode(v); err != nil {
+		if err = json.NewDecoder(resp.Body).Decode(v); err != nil {
 			return err
 		}
 	}

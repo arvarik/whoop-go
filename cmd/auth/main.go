@@ -146,7 +146,7 @@ func runAuthFlow(clientID, clientSecret string) {
 	}
 }
 
-func exchangeToken(data url.Values) (*tokenData, error) {
+func exchangeToken(data url.Values) (tokData *tokenData, err error) {
 	req, err := http.NewRequest(http.MethodPost, "https://api.prod.whoop.com/oauth/oauth2/token", strings.NewReader(data.Encode()))
 	if err != nil {
 		return nil, fmt.Errorf("creating request: %w", err)
@@ -157,10 +157,14 @@ func exchangeToken(data url.Values) (*tokenData, error) {
 	if err != nil {
 		return nil, fmt.Errorf("sending request: %w", err)
 	}
-	defer func() { _ = resp.Body.Close() }()
+	defer func() {
+		if closeErr := resp.Body.Close(); closeErr != nil && err == nil {
+			err = closeErr
+		}
+	}()
 
 	var result tokenData
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+	if err = json.NewDecoder(resp.Body).Decode(&result); err != nil {
 		return nil, fmt.Errorf("decoding response: %w", err)
 	}
 
