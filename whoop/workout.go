@@ -59,7 +59,7 @@ type WorkoutService struct {
 // GetByID fetches a single workout session by its UUID.
 func (s *WorkoutService) GetByID(ctx context.Context, id string) (*Workout, error) {
 	var item Workout
-	if err := s.client.Get(ctx, fmt.Sprintf("/activity/workout/%s", id), &item); err != nil {
+	if err := s.client.Get(ctx, fmt.Sprintf("/activity/workout/%s", url.PathEscape(id)), &item); err != nil {
 		return nil, err
 	}
 

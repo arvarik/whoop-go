@@ -66,7 +66,7 @@ type SleepService struct {
 // GetByID fetches a single sleep event by its UUID.
 func (s *SleepService) GetByID(ctx context.Context, id string) (*Sleep, error) {
 	var item Sleep
-	if err := s.client.Get(ctx, fmt.Sprintf("/activity/sleep/%s", id), &item); err != nil {
+	if err := s.client.Get(ctx, fmt.Sprintf("/activity/sleep/%s", url.PathEscape(id)), &item); err != nil {
 		return nil, err
 	}
 
