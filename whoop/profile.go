@@ -2,8 +2,6 @@ package whoop
 
 import (
 	"context"
-	"encoding/json"
-	"net/http"
 )
 
 // BasicProfile represents the user's basic profile information.
@@ -28,23 +26,8 @@ type UserService struct {
 
 // GetBasicProfile fetches the athlete's basic profile.
 func (s *UserService) GetBasicProfile(ctx context.Context) (profile *BasicProfile, err error) {
-	req, err := http.NewRequest(http.MethodGet, s.client.baseURL+"/user/profile/basic", nil)
-	if err != nil {
-		return nil, err
-	}
-
-	resp, err := s.client.Do(ctx, req)
-	if err != nil {
-		return nil, err
-	}
-	defer func() {
-		if closeErr := resp.Body.Close(); closeErr != nil && err == nil {
-			err = closeErr
-		}
-	}()
-
 	var p BasicProfile
-	if err = json.NewDecoder(resp.Body).Decode(&p); err != nil {
+	if err = s.client.Get(ctx, "/user/profile/basic", &p); err != nil {
 		return nil, err
 	}
 
@@ -53,23 +36,8 @@ func (s *UserService) GetBasicProfile(ctx context.Context) (profile *BasicProfil
 
 // GetBodyMeasurement fetches the athlete's body measurements.
 func (s *UserService) GetBodyMeasurement(ctx context.Context) (measurement *BodyMeasurement, err error) {
-	req, err := http.NewRequest(http.MethodGet, s.client.baseURL+"/user/measurement/body", nil)
-	if err != nil {
-		return nil, err
-	}
-
-	resp, err := s.client.Do(ctx, req)
-	if err != nil {
-		return nil, err
-	}
-	defer func() {
-		if closeErr := resp.Body.Close(); closeErr != nil && err == nil {
-			err = closeErr
-		}
-	}()
-
 	var m BodyMeasurement
-	if err = json.NewDecoder(resp.Body).Decode(&m); err != nil {
+	if err = s.client.Get(ctx, "/user/measurement/body", &m); err != nil {
 		return nil, err
 	}
 
