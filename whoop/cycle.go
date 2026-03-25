@@ -86,12 +86,5 @@ func (p *CyclePage) NextPage(ctx context.Context) (*CyclePage, error) {
 		return nil, ErrNoNextPage
 	}
 
-	// Copy existing options or initialize if nil
-	nextOpts := &ListOptions{}
-	if p.opts != nil {
-		*nextOpts = *p.opts
-	}
-	nextOpts.NextToken = p.NextToken
-
-	return p.service.List(ctx, nextOpts)
+	return p.service.List(ctx, nextPageOpts(p.opts, p.NextToken))
 }

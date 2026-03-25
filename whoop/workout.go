@@ -103,11 +103,5 @@ func (p *WorkoutPage) NextPage(ctx context.Context) (*WorkoutPage, error) {
 		return nil, ErrNoNextPage
 	}
 
-	nextOpts := &ListOptions{}
-	if p.opts != nil {
-		*nextOpts = *p.opts
-	}
-	nextOpts.NextToken = p.NextToken
-
-	return p.service.List(ctx, nextOpts)
+	return p.service.List(ctx, nextPageOpts(p.opts, p.NextToken))
 }

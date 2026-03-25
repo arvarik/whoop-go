@@ -51,6 +51,17 @@ func (o *ListOptions) encode(u *url.URL) {
 	u.RawQuery = q.Encode()
 }
 
+// nextPageOpts creates a new ListOptions with the given next token,
+// copying existing options if present.
+func nextPageOpts(opts *ListOptions, token string) *ListOptions {
+	nextOpts := &ListOptions{}
+	if opts != nil {
+		*nextOpts = *opts
+	}
+	nextOpts.NextToken = token
+	return nextOpts
+}
+
 // paginatedResponse represents the raw JSON wrapping a WHOOP collection array.
 type paginatedResponse[T any] struct {
 	Records   []T    `json:"records"`
