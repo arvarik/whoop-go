@@ -96,6 +96,71 @@ func TestCalculateBackoff_JitterDistribution(t *testing.T) {
 	}
 }
 
+type mockLimiter struct {
+	waitFunc func(ctx context.Context) error
+	calls    int
+}
+
+func (m *mockLimiter) Wait(ctx context.Context) error {
+	m.calls++
+	if m.waitFunc != nil {
+		return m.waitFunc(ctx)
+	}
+	return nil
+}
+
+func TestRateLimiter_Wait(t *testing.T) {
+	t.Run("disabled auto-limiting returns nil immediately", func(t *testing.T) {
+		ml := &mockLimiter{}
+		rl := &rateLimiter{
+			limiter: ml,
+		}
+		rl.isAutoLimiting.Store(false)
+
+		err := rl.Wait(context.Background())
+		if err != nil {
+			t.Errorf("expected nil error when disabled, got %v", err)
+		}
+		if ml.calls > 0 {
+			t.Error("expected no calls to underlying limiter when disabled")
+		}
+	})
+
+	t.Run("enabled auto-limiting calls underlying limiter", func(t *testing.T) {
+		ml := &mockLimiter{}
+		rl := &rateLimiter{
+			limiter: ml,
+		}
+		rl.isAutoLimiting.Store(true)
+
+		err := rl.Wait(context.Background())
+		if err != nil {
+			t.Errorf("expected nil error from mock, got %v", err)
+		}
+		if ml.calls != 1 {
+			t.Errorf("expected 1 call to underlying limiter, got %d", ml.calls)
+		}
+	})
+
+	t.Run("propagates error from underlying limiter", func(t *testing.T) {
+		expectedErr := errors.New("context canceled")
+		ml := &mockLimiter{
+			waitFunc: func(ctx context.Context) error {
+				return expectedErr
+			},
+		}
+		rl := &rateLimiter{
+			limiter: ml,
+		}
+		rl.isAutoLimiting.Store(true)
+
+		err := rl.Wait(context.Background())
+		if !errors.Is(err, expectedErr) {
+			t.Errorf("expected error %v, got %v", expectedErr, err)
+		}
+	})
+}
+
 var sink int64
 
 func BenchmarkCalculateBackoff(b *testing.B) {
