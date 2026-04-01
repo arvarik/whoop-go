@@ -10,10 +10,16 @@ import (
 	"golang.org/x/time/rate"
 )
 
+// limiter defines the interface for rate limiting.
+// This is satisfied by *rate.Limiter from golang.org/x/time/rate.
+type limiter interface {
+	Wait(ctx context.Context) error
+}
+
 // rateLimiter encapsulates the local token-bucket rate limiting
 // to ensure we do not exceed WHOOP's limits (100 req/min).
 type rateLimiter struct {
-	limiter        *rate.Limiter
+	limiter        limiter
 	isAutoLimiting atomic.Bool
 }
 
