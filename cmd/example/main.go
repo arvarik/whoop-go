@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -104,5 +106,25 @@ func processWorkout(client *whoop.Client, workoutID string) {
 		log.Printf("[Webhook Worker] Workout Processed: ID=%s (Processing Score...)", workout.ID)
 	}
 
-	// TODO: Save this `workout` payload locally to a database or generic store!
+	// Persist the workout data to a local store.
+	if err := saveWorkoutToLocalFile(workout); err != nil {
+		log.Printf("[Webhook Worker] Failed to persist workout %s: %v", workout.ID, err)
+	}
+}
+
+// saveWorkoutToLocalFile persists the workout data to a local JSON file.
+// In a production environment, this would likely involve a database like PostgreSQL or MongoDB.
+func saveWorkoutToLocalFile(workout *whoop.Workout) error {
+	data, err := json.MarshalIndent(workout, "", "  ")
+	if err != nil {
+		return fmt.Errorf("failed to marshal workout: %w", err)
+	}
+
+	filename := fmt.Sprintf("workout_%s.json", workout.ID)
+	if err := os.WriteFile(filename, data, 0644); err != nil {
+		return fmt.Errorf("failed to write workout to file: %w", err)
+	}
+
+	log.Printf("[Webhook Worker] Successfully persisted workout to %s", filename)
+	return nil
 }
