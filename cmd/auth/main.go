@@ -88,9 +88,17 @@ func runAuthFlow(clientID, clientSecret string) {
 	fmt.Printf("\n   %s\n\n", authURL)
 	fmt.Printf("Waiting for authorization callback on port %s...\n", port)
 
-	server := &http.Server{Addr: ":" + port}
+	mux := http.NewServeMux()
+	server := &http.Server{
+		Addr:              ":" + port,
+		Handler:           mux,
+		ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout:       10 * time.Second,
+		WriteTimeout:      10 * time.Second,
+		IdleTimeout:       120 * time.Second,
+	}
 
-	http.HandleFunc(u.Path, func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc(u.Path, func(w http.ResponseWriter, r *http.Request) {
 		// Check for OAuth error response from WHOOP.
 		if errParam := r.URL.Query().Get("error"); errParam != "" {
 			desc := r.URL.Query().Get("error_description")
