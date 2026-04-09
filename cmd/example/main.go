@@ -38,10 +38,20 @@ func main() {
 	}
 
 	// Setup our HTTP receiver for the skinny webhook
-	http.HandleFunc("/whoop/webhook", webhookHandler(client, webhookSecret, jobQueue))
+	mux := http.NewServeMux()
+	mux.HandleFunc("/whoop/webhook", webhookHandler(client, webhookSecret, jobQueue))
+
+	server := &http.Server{
+		Addr:              ":8080",
+		Handler:           mux,
+		ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout:       10 * time.Second,
+		WriteTimeout:      10 * time.Second,
+		IdleTimeout:       120 * time.Second,
+	}
 
 	log.Println("Webhook Listener gracefully listening on :8080...")
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	log.Fatal(server.ListenAndServe())
 }
 
 func webhookHandler(client *whoop.Client, webhookSecret string, jobQueue chan<- string) http.HandlerFunc {
