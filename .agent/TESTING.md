@@ -22,7 +22,8 @@ make build-local
 export WHOOP_CLIENT_ID="your-client-id"
 export WHOOP_CLIENT_SECRET="your-client-secret"
 go run cmd/auth/main.go
-# Follow the browser flow, then export the printed WHOOP_OAUTH_TOKEN
+# First run: Follow the browser flow, authorize, and the session is saved to .whoop_token.json
+# Subsequent runs: Token is auto-refreshed from the saved session — no browser login needed
 ```
 
 ### Git Hooks
@@ -37,10 +38,10 @@ make setup
 Tests do NOT mock the `whoop.Client` via interfaces. Instead, the project uses `net/http/httptest.Server` to create an ephemeral HTTP server with hand-crafted route handlers.
 
 **Key test infrastructure files:**
-- **`mock_server_test.go`**: Contains `newMockServer(t)` which registers handlers for all domain endpoints (Cycle, Workout, Sleep, Recovery, User), plus error scenarios (429, 403, context cancellation delays). Also contains `newMockClient(ts, ...opts)` which creates a `*Client` pointed at the mock server.
+- **`whoop/mock_server_test.go`**: Contains `newMockServer(t)` which registers handlers for all domain endpoints (Cycle, Workout, Sleep, Recovery, User), plus error scenarios (429, 403, context cancellation delays). Also contains `newMockClient(ts, ...opts)` which creates a `*Client` pointed at the mock server with shorter backoff defaults.
 
 **How it works:**
-1. `newMockServer(t)` creates an `httptest.Server` with a `ServeMux` routing requests to literal JSON payload handlers.
+1. `newMockServer(t)` creates an `httptest.Server` with a `ServeMux` routing requests to literal JSON payload handlers (12 handlers total: Cycle GetByID, Workout List/GetByID, Sleep List/GetByID, Recovery List/GetByID, User Profile, User BodyMeasurement, 429 generator, 403 generator, delay endpoint).
 2. `newMockClient(ts)` calls `whoop.NewClient(whoop.WithBaseURL(ts.URL), ...)` to point the real client at the fake server.
 3. Tests exercise the full request pipeline: Functional Options → `Do()` → rate limiter → HTTP transport → JSON decode → typed structs.
 
@@ -55,11 +56,13 @@ Tests do NOT mock the `whoop.Client` via interfaces. Instead, the project uses `
 - **Vet**: `make vet` → `go vet ./...`
 
 ### CI Pipeline
-GitHub Actions (`.github/workflows/ci.yml`) runs on every push to `main` and every PR:
-1. `go mod tidy`
-2. `go vet ./...`
-3. `go test -v -race -cover ./...`
-4. `golangci-lint` (v2.10.1, 5m timeout)
+GitHub Actions (`.github/workflows/ci.yml`) runs on every push to `main` and every PR to `main`:
+1. `actions/checkout@v4`
+2. `actions/setup-go@v5` with `go-version-file: go.mod`
+3. `go mod tidy`
+4. `go vet ./...`
+5. `go test -v -race -cover ./...`
+6. `golangci-lint` via `golangci/golangci-lint-action@v7` (v2.10.1, 5m timeout)
 
 ## 2. Execution Evidence Rules (CRITICAL FOR AGENTS)
 _Never mark a test as PASS without evidence. Humans rely on this file to verify agent accuracy._
@@ -83,24 +86,32 @@ ok  	github.com/arvarik/whoop-go/whoop	0.342s
 
 ## 3. Test File Inventory
 
-| Test File | What It Covers |
-|-----------|----------------|
-| `client_test.go` | Client bootstrapping, `Do()` error paths, retry exhaustion |
-| `client_headers_test.go` | Auth header injection, User-Agent, Content-Type |
-| `client_safety_test.go` | Token redaction in `String()` / `GoString()` |
-| `options_test.go` | Functional Options (WithToken, WithBaseURL, etc.) |
-| `ratelimit_test.go` | Token bucket enforcement, enable/disable toggle, backoff calculation with jitter |
-| `pagination_test.go` | ListOptions encoding, NextPage iteration, ErrNoNextPage sentinel |
-| `cycle_test.go` | CycleService GetByID and List with pagination |
-| `workout_test.go` | WorkoutService GetByID and List with pagination |
-| `sleep_test.go` | SleepService GetByID and List with pagination |
-| `recovery_test.go` | RecoveryService GetByID and List with pagination |
-| `profile_test.go` | UserService GetBasicProfile and GetBodyMeasurement |
-| `webhook_test.go` | ParseWebhook signature validation, POST-only gate, missing headers |
-| `security_test.go` | Payload size limits, tampered signatures, boundary attacks |
-| `errors_test.go` | Error type mapping (APIError, AuthError, RateLimitError), Unwrap chains, message formatting |
-| `example_test.go` | Godoc-compatible runnable examples for package documentation |
-| `mock_server_test.go` | Shared test infrastructure: mock HTTP server and client factory |
+### Library Tests (`whoop/` package)
+
+| Test File | Package | What It Covers |
+|-----------|---------|----------------|
+| `mock_server_test.go` | `whoop` | Shared test infrastructure: `newMockServer(t)` with 12 route handlers, `newMockClient(ts, ...opts)` factory |
+| `client_test.go` | `whoop` | `Do()` context cancellation, `Do()` error mapping (403 → `*AuthError`), `Client.String()` / `GoString()` token redaction across `%v`, `%+v`, `%#v`, `%s` format verbs |
+| `client_headers_test.go` | `whoop` | Auth header injection with/without token, `Accept`, `User-Agent`, `Content-Type` defaults for GET/POST, custom Content-Type preservation |
+| `client_safety_test.go` | `whoop` | Verifies `req.Clone(ctx)` prevents header mutation on the caller's original request — uses a `safetyCheckTransport` mock to intercept without network calls |
+| `options_test.go` | `whoop` | Functional Options (`WithToken`, `WithBaseURL`, `WithMaxRetries`, `WithBackoffBase`, `WithBackoffMax`, `WithHTTPClient`, `WithRateLimiting`) |
+| `ratelimit_test.go` | `whoop` | Token bucket enforcement, enable/disable toggle via `SetAutoLimiting`, `calculateBackoff()` exponential growth, jitter bounds, defensive floors |
+| `pagination_test.go` | `whoop` | `ListOptions.encode()` query parameter generation, `NextPage` iteration, `ErrNoNextPage` sentinel |
+| `cycle_test.go` | `whoop` | `CycleService.GetByID` and `List` with pagination |
+| `workout_test.go` | `whoop` | `WorkoutService.GetByID` and `List` with pagination |
+| `sleep_test.go` | `whoop` | `SleepService.GetByID` and `List` with pagination |
+| `recovery_test.go` | `whoop` | `RecoveryService.GetByID` and `List` with pagination |
+| `profile_test.go` | `whoop` | `UserService.GetBasicProfile` and `GetBodyMeasurement` |
+| `webhook_test.go` | `whoop` | `ParseWebhook` valid signature, invalid signature, missing header, wrong HTTP method (non-POST), oversized body (>1MB), invalid JSON with valid signature, empty body, pre-consumed body |
+| `security_test.go` | `whoop` | `mapHTTPError()` body truncation at 1000 chars: large body (2000 chars → 1003 with `...`), short body (unchanged), exactly 1000 chars (no truncation) |
+| `errors_test.go` | `whoop` | Error type mapping (`APIError`, `AuthError`, `RateLimitError`), `Unwrap()` chains, message formatting, `errors.Is()`/`errors.As()` compatibility |
+| `example_test.go` | `whoop_test` | Godoc-compatible runnable examples for `NewClient`, `UserService`, `CycleService`, `WorkoutService`, `SleepService`, `RecoveryService`, `ParseWebhook` |
+
+### Executable Tests (`cmd/` packages)
+
+| Test File | Package | What It Covers |
+|-----------|---------|----------------|
+| `cmd/example/main_test.go` | `main` | Webhook handler integration: valid `workout.updated` event → queued, non-workout event → not queued, invalid signature → 401, full job queue → graceful drop. Uses table-driven subtests with `signPayload()` helper. |
 
 ---
 
@@ -124,6 +135,12 @@ ok  	github.com/arvarik/whoop-go/whoop	0.342s
 | Webhook payload exceeds 1MB limit | UNTESTED | |
 | Webhook invalid signature rejection | UNTESTED | |
 | Webhook valid signature + JSON decode | UNTESTED | |
+| Webhook invalid JSON with valid signature | UNTESTED | |
+| Webhook empty body | UNTESTED | |
+| Webhook pre-consumed body | UNTESTED | |
+| Error body truncation at 1000 chars | UNTESTED | |
+| Request clone prevents header mutation | UNTESTED | |
+| Content-Type set only for non-GET requests | UNTESTED | |
 | Race detector passes all packages | UNTESTED | |
 | golangci-lint reports 0 issues | UNTESTED | |
 
@@ -143,4 +160,6 @@ _These scenarios survive the Ship phase cleanup. They are re-run on every releas
 | HMAC signature rejects tampered bodies | _YYYY-MM-DD_ | `make test` |
 | Payload >1MB is rejected by ParseWebhook | _YYYY-MM-DD_ | `make test` |
 | Token redacted in all string representations | _YYYY-MM-DD_ | `make test` |
+| Request clone prevents original header mutation | _YYYY-MM-DD_ | `make test` |
+| Error body truncation at 1000 chars | _YYYY-MM-DD_ | `make test` |
 | golangci-lint produces 0 issues | _YYYY-MM-DD_ | `make lint` |

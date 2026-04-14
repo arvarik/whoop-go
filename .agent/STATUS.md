@@ -20,7 +20,8 @@ _List the lifecycle phases for the current SDK feature and check them off as you
 ## Recently Completed
 _Bullet points of features or major tasks that were recently shipped. Move items here after the "Ship" phase._
 - [Project Bootstrap] (shipped 2026-04-14)
-- [.agent/ Documentation Hardening — comprehensive accuracy pass] (shipped 2026-04-14)
+- [.agent/ Documentation Hardening — initial accuracy pass] (shipped 2026-04-14)
+- [.agent/ Documentation Hardening v2 — comprehensive 24-issue audit with full struct field reference, API endpoint map, and corrected error type signatures] (shipped 2026-04-14)
 
 ## Known Issues
 _List any persistent bugs or architectural debt that isn't blocking the current release but needs to be tracked. Do NOT list "blocks release" bugs here (those go in TESTING.md)._
@@ -35,11 +36,14 @@ _List ONLY the files the agent needs to read or modify for the immediate next ta
 ## Review Results
 _Populated during the Review phase. Keep the most recent review here; archive older ones with shipped features._
 
-### Review Results — 2026-04-14
-- **Architecture**: pass
-- **Security (Payload caps, HMAC, token redaction)**: pass
-- **SDK Ergonomics (Functional Options, Iterator Pagination)**: pass
-- **Documentation (.agent/ accuracy vs source code)**: pass
+### Review Results — 2026-04-14 (v2 Audit)
+- **Architecture**: pass — 12 inaccuracies corrected (Content-Type injection, body drain caps, WorkoutService sync.Once, OAuth URL scoping, CI versions, auto-refresh, cmd tests, defensive floor clarification)
+- **Philosophy**: pass — 3 inaccuracies corrected (math/rand/v2, rate limiter default, ParseWebhook design rationale)
+- **Style Guide**: pass — 4 inaccuracies corrected (RetryAfter type, AuthError.Err type, Content-Type injection, test descriptions)
+- **Testing**: pass — 3 inaccuracies corrected (missing cmd test, wrong test description, auto-refresh)
+- **Status**: pass — updated records
+- **Complete struct field reference added**: All 16 domain types fully documented field-by-field
+- **API endpoint map added**: All 10 REST endpoints catalogued
 
 ### Action Items
 _For each item, specify severity and routing._
