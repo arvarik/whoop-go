@@ -58,3 +58,15 @@ _Track parallel agent work when using git worktrees. Remove entries during Ship 
 | Worktree | Branch | Status | Owner |
 |----------|--------|--------|-------|
 | (none — sequential execution) | | | |
+
+---
+
+## Stub Audit Tracker
+
+N/A — Not a full-stack project. No frontend stubs.
+
+---
+
+## Prompt Versioning Changelog
+
+N/A — No LLM prompts in this project.

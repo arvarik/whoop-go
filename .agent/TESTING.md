@@ -144,6 +144,60 @@ ok  	github.com/arvarik/whoop-go/whoop	0.342s
 | Race detector passes all packages | UNTESTED | |
 | golangci-lint reports 0 issues | UNTESTED | |
 
+---
+
+## Backend Route Coverage Matrix
+
+_Populated by the SDET during the Trap phase. One row per exported function or API method. All cells must show PASS with execution evidence or FAIL with reproduction steps._
+
+| Endpoint / Function | Method | Valid Input | Invalid Input | Error Handling | Edge Cases |
+|---------------------|--------|-------------|---------------|----------------|------------|
+| `NewClient` | `NewClient(opts ...Option)` | | | | |
+| `Client.Do` | `Do(ctx, req)` | | | | |
+| `Client.Get` | `Get(ctx, path, v)` | | | | |
+| `Client.String` | `String()` | | | | |
+| `Client.GoString` | `GoString()` | | | | |
+| `WithToken` | `WithToken(token)` | | | | |
+| `WithBaseURL` | `WithBaseURL(url)` | | | | |
+| `WithHTTPClient` | `WithHTTPClient(c)` | | | | |
+| `WithMaxRetries` | `WithMaxRetries(retries)` | | | | |
+| `WithBackoffBase` | `WithBackoffBase(base)` | | | | |
+| `WithBackoffMax` | `WithBackoffMax(max)` | | | | |
+| `WithRateLimiting` | `WithRateLimiting(enabled)` | | | | |
+| `CycleService.GetByID` | `GetByID(ctx, id int)` | | | | |
+| `CycleService.List` | `List(ctx, *ListOptions)` | | | | |
+| `CyclePage.NextPage` | `NextPage(ctx)` | | | | |
+| `WorkoutService.GetByID` | `GetByID(ctx, id string)` | | | | |
+| `WorkoutService.List` | `List(ctx, *ListOptions)` | | | | |
+| `WorkoutPage.NextPage` | `NextPage(ctx)` | | | | |
+| `SleepService.GetByID` | `GetByID(ctx, id string)` | | | | |
+| `SleepService.List` | `List(ctx, *ListOptions)` | | | | |
+| `SleepPage.NextPage` | `NextPage(ctx)` | | | | |
+| `RecoveryService.GetByID` | `GetByID(ctx, cycleID int)` | | | | |
+| `RecoveryService.List` | `List(ctx, *ListOptions)` | | | | |
+| `RecoveryPage.NextPage` | `NextPage(ctx)` | | | | |
+| `UserService.GetBasicProfile` | `GetBasicProfile(ctx)` | | | | |
+| `UserService.GetBodyMeasurement` | `GetBodyMeasurement(ctx)` | | | | |
+| `ParseWebhook` | `ParseWebhook(r, secret)` | | | | |
+| `APIError.Error` | `Error()` | | | | |
+| `APIError.Unwrap` | `Unwrap()` | | | | |
+| `RateLimitError.Error` | `Error()` | | | | |
+| `RateLimitError.Unwrap` | `Unwrap()` | | | | |
+| `AuthError.Error` | `Error()` | | | | |
+| `AuthError.Unwrap` | `Unwrap()` | | | | |
+
+---
+
+## Frontend Component State Matrix
+
+N/A — Frontend topology is not active for this project.
+
+---
+
+## ML / AI Evaluation Thresholds
+
+N/A — ML/AI topology is not active for this project.
+
 ## 5. Bugs Found (Fix Phase Queue)
 _List specific bugs discovered during testing. Agents in the 'Fix' phase will read this section._
 - (None currently)
