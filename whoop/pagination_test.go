@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"strings"
 	"testing"
 	"time"
 )
@@ -123,5 +124,27 @@ func TestCycleService_List_Pagination(t *testing.T) {
 	_, err = page2.NextPage(context.Background())
 	if !errors.Is(err, ErrNoNextPage) {
 		t.Errorf("expected ErrNoNextPage, got %v", err)
+	}
+}
+
+func TestGetPaginated_DecodeError(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		// Return malformed JSON
+		_, _ = w.Write([]byte(`{"records": [{"id": 1}], "next_token": `))
+	}))
+	defer ts.Close()
+
+	client := NewClient(WithBaseURL(ts.URL))
+	u, _ := url.Parse(ts.URL + "/test")
+
+	_, err := getPaginated[Cycle](context.Background(), client, u, &ListOptions{})
+	if err == nil {
+		t.Fatal("expected error decoding malformed JSON, got nil")
+	}
+
+	// Verify it's a JSON syntax error or similar
+	if !strings.Contains(err.Error(), "unexpected EOF") && !strings.Contains(err.Error(), "JSON") {
+		t.Errorf("expected JSON decoding error, got: %v", err)
 	}
 }
