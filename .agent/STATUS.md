@@ -4,7 +4,7 @@ Last updated: 2026-04-14
 _This file tracks the detailed explore/plan/build/test sub-phases per feature. It is the single source of truth for "where am I?" Agents should update this file constantly after completing tasks or making progress, serving as the central continuity node between independent agent runs._
 
 ## Current Focus
-Core SDK v1.0.0 is stable. All domain services (User, Cycle, Sleep, Workout, Recovery) are implemented with pagination, rate limiting, retry logic, and webhook validation. Ready for feature ideation.
+Ready for feature ideation.
 
 ## State of Work
 _List the lifecycle phases for the current SDK feature and check them off as you progress. Tailor the phases to the specific feature being built._
@@ -19,6 +19,7 @@ _List the lifecycle phases for the current SDK feature and check them off as you
 
 ## Recently Completed
 _Bullet points of features or major tasks that were recently shipped. Move items here after the "Ship" phase._
+- [v1.2.0 Release — Testing & Review Audit] (shipped 2026-04-20)
 - [Project Bootstrap] (shipped 2026-04-14)
 - [.agent/ Documentation Hardening — initial accuracy pass] (shipped 2026-04-14)
 - [.agent/ Documentation Hardening v2 — comprehensive 24-issue audit with full struct field reference, API endpoint map, and corrected error type signatures] (shipped 2026-04-14)
@@ -45,12 +46,17 @@ _Populated during the Review phase. Keep the most recent review here; archive ol
 - **Complete struct field reference added**: All 16 domain types fully documented field-by-field
 - **API endpoint map added**: All 10 REST endpoints catalogued
 
+### Review Results - 2026-04-20 (Release Readiness)
+- **Architecture**: pass — The codebase rigorously follows the `ARCHITECTURE.md` patterns. Sub-services use `sync.Once` URL caching, Functional Options configure the `Client` without breaking defensive limits, and the single-package layout remains intact.
+- **Security**: pass — Evaluated all ingress points. Webhook payloads are properly capped at 1MB, HMAC signatures use constant-time comparisons, response body drains are capped at 4KB, and structural tokens are redacted in system logs. The zero-external-dependency posture is strictly maintained.
+- **Product fit**: pass — It effectively solves the pain points by cleanly abstracting WHOOP API pagination, 429 backoff calculations, and schema validations into type-safe idiomatic Go.
+
 ### Action Items
 _For each item, specify severity and routing._
 
 | Item | Severity | Route To | Status |
 |------|----------|----------|--------|
-| _(None currently)_ | | | |
+| _(None)_ | | | |
 
 ## Active Worktrees
 _Track parallel agent work when using git worktrees. Remove entries during Ship phase cleanup._
