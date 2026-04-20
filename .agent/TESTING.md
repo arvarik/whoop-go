@@ -119,30 +119,6 @@ ok  	github.com/arvarik/whoop-go/whoop	0.342s
 
 | Scenario | Status | Notes (Evidence) |
 |----------|--------|------------------|
-| Client bootstrapping with defaults | UNTESTED | |
-| Functional Options override defaults | UNTESTED | |
-| Auth header injected on requests | UNTESTED | |
-| Token redacted in String()/GoString() | UNTESTED | |
-| Rate limiter enforces 100 req/min bucket | UNTESTED | |
-| Backoff calculation with full jitter | UNTESTED | |
-| HTTP 429 retry loop with Retry-After | UNTESTED | |
-| HTTP 429 retry exhaustion returns RateLimitError | UNTESTED | |
-| HTTP 401/403 returns AuthError | UNTESTED | |
-| Context cancellation during backoff | UNTESTED | |
-| Paginated List → NextPage → ErrNoNextPage | UNTESTED | |
-| Webhook POST-only gate | UNTESTED | |
-| Webhook missing X-Whoop-Signature | UNTESTED | |
-| Webhook payload exceeds 1MB limit | UNTESTED | |
-| Webhook invalid signature rejection | UNTESTED | |
-| Webhook valid signature + JSON decode | UNTESTED | |
-| Webhook invalid JSON with valid signature | UNTESTED | |
-| Webhook empty body | UNTESTED | |
-| Webhook pre-consumed body | UNTESTED | |
-| Error body truncation at 1000 chars | UNTESTED | |
-| Request clone prevents header mutation | UNTESTED | |
-| Content-Type set only for non-GET requests | UNTESTED | |
-| Race detector passes all packages | UNTESTED | |
-| golangci-lint reports 0 issues | UNTESTED | |
 
 ---
 
@@ -152,39 +128,39 @@ _Populated by the SDET during the Trap phase. One row per exported function or A
 
 | Endpoint / Function | Method | Valid Input | Invalid Input | Error Handling | Edge Cases |
 |---------------------|--------|-------------|---------------|----------------|------------|
-| `NewClient` | `NewClient(opts ...Option)` | | | | |
-| `Client.Do` | `Do(ctx, req)` | | | | |
-| `Client.Get` | `Get(ctx, path, v)` | | | | |
-| `Client.String` | `String()` | | | | |
-| `Client.GoString` | `GoString()` | | | | |
-| `WithToken` | `WithToken(token)` | | | | |
-| `WithBaseURL` | `WithBaseURL(url)` | | | | |
-| `WithHTTPClient` | `WithHTTPClient(c)` | | | | |
-| `WithMaxRetries` | `WithMaxRetries(retries)` | | | | |
-| `WithBackoffBase` | `WithBackoffBase(base)` | | | | |
-| `WithBackoffMax` | `WithBackoffMax(max)` | | | | |
-| `WithRateLimiting` | `WithRateLimiting(enabled)` | | | | |
-| `CycleService.GetByID` | `GetByID(ctx, id int)` | | | | |
-| `CycleService.List` | `List(ctx, *ListOptions)` | | | | |
-| `CyclePage.NextPage` | `NextPage(ctx)` | | | | |
-| `WorkoutService.GetByID` | `GetByID(ctx, id string)` | | | | |
-| `WorkoutService.List` | `List(ctx, *ListOptions)` | | | | |
-| `WorkoutPage.NextPage` | `NextPage(ctx)` | | | | |
-| `SleepService.GetByID` | `GetByID(ctx, id string)` | | | | |
-| `SleepService.List` | `List(ctx, *ListOptions)` | | | | |
-| `SleepPage.NextPage` | `NextPage(ctx)` | | | | |
-| `RecoveryService.GetByID` | `GetByID(ctx, cycleID int)` | | | | |
-| `RecoveryService.List` | `List(ctx, *ListOptions)` | | | | |
-| `RecoveryPage.NextPage` | `NextPage(ctx)` | | | | |
-| `UserService.GetBasicProfile` | `GetBasicProfile(ctx)` | | | | |
-| `UserService.GetBodyMeasurement` | `GetBodyMeasurement(ctx)` | | | | |
-| `ParseWebhook` | `ParseWebhook(r, secret)` | | | | |
-| `APIError.Error` | `Error()` | | | | |
-| `APIError.Unwrap` | `Unwrap()` | | | | |
-| `RateLimitError.Error` | `Error()` | | | | |
-| `RateLimitError.Unwrap` | `Unwrap()` | | | | |
-| `AuthError.Error` | `Error()` | | | | |
-| `AuthError.Unwrap` | `Unwrap()` | | | | |
+| `NewClient` | `NewClient(opts ...Option)` | PASS `go test -v` | N/A | N/A | N/A |
+| `Client.Do` | `Do(ctx, req)` | PASS `go test -v` | N/A | PASS `go test -v` | PASS `go test -v` |
+| `Client.Get` | `Get(ctx, path, v)` | PASS `go test -v` | N/A | PASS `go test -v` | N/A |
+| `Client.String` | `String()` | PASS `go test -v` | N/A | N/A | PASS `go test -v` |
+| `Client.GoString` | `GoString()` | PASS `go test -v` | N/A | N/A | PASS `go test -v` |
+| `WithToken` | `WithToken(token)` | PASS `go test -v` | N/A | N/A | N/A |
+| `WithBaseURL` | `WithBaseURL(url)` | PASS `go test -v` | N/A | N/A | N/A |
+| `WithHTTPClient` | `WithHTTPClient(c)` | PASS `go test -v` | N/A | N/A | N/A |
+| `WithMaxRetries` | `WithMaxRetries(retries)` | PASS `go test -v` | N/A | N/A | N/A |
+| `WithBackoffBase` | `WithBackoffBase(base)` | PASS `go test -v` | N/A | N/A | N/A |
+| `WithBackoffMax` | `WithBackoffMax(max)` | PASS `go test -v` | N/A | N/A | N/A |
+| `WithRateLimiting` | `WithRateLimiting(enabled)` | PASS `go test -v` | N/A | N/A | N/A |
+| `CycleService.GetByID` | `GetByID(ctx, id int)` | PASS `go test -v` | N/A | PASS `go test -v` | N/A |
+| `CycleService.List` | `List(ctx, *ListOptions)` | PASS `go test -v` | N/A | PASS `go test -v` | PASS `go test -v` |
+| `CyclePage.NextPage` | `NextPage(ctx)` | PASS `go test -v` | N/A | PASS `go test -v` | PASS `go test -v` |
+| `WorkoutService.GetByID` | `GetByID(ctx, id string)` | PASS `go test -v` | N/A | PASS `go test -v` | N/A |
+| `WorkoutService.List` | `List(ctx, *ListOptions)` | PASS `go test -v` | N/A | PASS `go test -v` | PASS `go test -v` |
+| `WorkoutPage.NextPage` | `NextPage(ctx)` | PASS `go test -v` | N/A | PASS `go test -v` | PASS `go test -v` |
+| `SleepService.GetByID` | `GetByID(ctx, id string)` | PASS `go test -v` | N/A | PASS `go test -v` | N/A |
+| `SleepService.List` | `List(ctx, *ListOptions)` | PASS `go test -v` | N/A | PASS `go test -v` | PASS `go test -v` |
+| `SleepPage.NextPage` | `NextPage(ctx)` | PASS `go test -v` | N/A | PASS `go test -v` | PASS `go test -v` |
+| `RecoveryService.GetByID` | `GetByID(ctx, cycleID int)` | PASS `go test -v` | N/A | PASS `go test -v` | N/A |
+| `RecoveryService.List` | `List(ctx, *ListOptions)` | PASS `go test -v` | N/A | PASS `go test -v` | PASS `go test -v` |
+| `RecoveryPage.NextPage` | `NextPage(ctx)` | PASS `go test -v` | N/A | PASS `go test -v` | PASS `go test -v` |
+| `UserService.GetBasicProfile` | `GetBasicProfile(ctx)` | PASS `go test -v` | N/A | PASS `go test -v` | N/A |
+| `UserService.GetBodyMeasurement` | `GetBodyMeasurement(ctx)` | PASS `go test -v` | N/A | PASS `go test -v` | N/A |
+| `ParseWebhook` | `ParseWebhook(r, secret)` | PASS `go test -v` | PASS `go test -v` | PASS `go test -v` | PASS `go test -v` |
+| `APIError.Error` | `Error()` | PASS `go test -v` | N/A | N/A | N/A |
+| `APIError.Unwrap` | `Unwrap()` | PASS `go test -v` | N/A | N/A | N/A |
+| `RateLimitError.Error` | `Error()` | PASS `go test -v` | N/A | N/A | PASS `go test -v` |
+| `RateLimitError.Unwrap` | `Unwrap()` | PASS `go test -v` | N/A | N/A | N/A |
+| `AuthError.Error` | `Error()` | PASS `go test -v` | N/A | N/A | N/A |
+| `AuthError.Unwrap` | `Unwrap()` | PASS `go test -v` | N/A | N/A | N/A |
 
 ---
 
@@ -209,11 +185,11 @@ _These scenarios survive the Ship phase cleanup. They are re-run on every releas
 
 | Scenario | Last Verified | Notes |
 |----------|---------------|-------|
-| Race detector passes on all packages | _YYYY-MM-DD_ | `make test` |
-| HMAC signature validates correctly signed bodies | _YYYY-MM-DD_ | `make test` |
-| HMAC signature rejects tampered bodies | _YYYY-MM-DD_ | `make test` |
-| Payload >1MB is rejected by ParseWebhook | _YYYY-MM-DD_ | `make test` |
-| Token redacted in all string representations | _YYYY-MM-DD_ | `make test` |
-| Request clone prevents original header mutation | _YYYY-MM-DD_ | `make test` |
-| Error body truncation at 1000 chars | _YYYY-MM-DD_ | `make test` |
-| golangci-lint produces 0 issues | _YYYY-MM-DD_ | `make lint` |
+| Race detector passes on all packages | 2026-04-20 | `make test` |
+| HMAC signature validates correctly signed bodies | 2026-04-20 | `make test` |
+| HMAC signature rejects tampered bodies | 2026-04-20 | `make test` |
+| Payload >1MB is rejected by ParseWebhook | 2026-04-20 | `make test` |
+| Token redacted in all string representations | 2026-04-20 | `make test` |
+| Request clone prevents original header mutation | 2026-04-20 | `make test` |
+| Error body truncation at 1000 chars | 2026-04-20 | `make test` |
+| golangci-lint produces 0 issues | 2026-04-20 | `make lint` |
