@@ -193,3 +193,16 @@ _These scenarios survive the Ship phase cleanup. They are re-run on every releas
 | Request clone prevents original header mutation | 2026-04-20 | `make test` |
 | Error body truncation at 1000 chars | 2026-04-20 | `make test` |
 | golangci-lint produces 0 issues | 2026-04-20 | `make lint` |
+
+### Backend Route Coverage
+
+| Route | Method | Auth | Contract Test | Integration Test |
+|-------|--------|------|---------------|------------------|
+| _Fill in your routes_ | | | | |
+
+### API Surface Coverage
+
+| Export | Unit Test | Type Test | Doc Example | Breaking Change Guard |
+|-------|-----------|-----------|-------------|----------------------|
+| _Fill in your exports_ | | | | |
+

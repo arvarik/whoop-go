@@ -1,4 +1,6 @@
 # whoop-go Status
+[STATE: SHIPPED]
+
 Last updated: 2026-04-14
 
 _This file tracks the detailed explore/plan/build/test sub-phases per feature. It is the single source of truth for "where am I?" Agents should update this file constantly after completing tasks or making progress, serving as the central continuity node between independent agent runs._
