@@ -2,7 +2,6 @@ package whoop
 
 import (
 	"context"
-	"math"
 	"math/rand/v2"
 	"sync/atomic"
 	"time"
@@ -60,11 +59,25 @@ func calculateBackoff(attempt int, base, max time.Duration) time.Duration {
 	}
 
 	// Exponential backoff: base * 2^attempt
-	backoff := float64(base) * math.Pow(2, float64(attempt))
+	// Use bitwise shift for faster integer exponentiation.
+	var backoff float64
+	if attempt < 0 {
+		attempt = 0
+	}
 
-	// Cap at maximum backoff
-	if backoff > float64(max) {
+	if attempt >= 63 {
 		backoff = float64(max)
+	} else {
+		// Calculate backoff using bitwise shift: base * (1 << attempt)
+		b := base << attempt
+		// Check for overflow or if it exceeds max.
+		// b < base handles signed overflow where shifting into the sign bit
+		// makes the value negative or smaller than the base.
+		if b < base || b > max {
+			backoff = float64(max)
+		} else {
+			backoff = float64(b)
+		}
 	}
 
 	// Apply full jitter
