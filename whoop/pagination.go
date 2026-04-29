@@ -69,12 +69,15 @@ type paginatedResponse[T any] struct {
 }
 
 // getPaginated executes a generic GET request for a paginated resource.
-func getPaginated[T any](ctx context.Context, client *Client, u *url.URL, opts *ListOptions) (pageRes *paginatedResponse[T], err error) {
-	// Copy the URL so that encoding options doesn't modify the cached base
-	reqURL := *u
-	opts.encode(&reqURL)
+func getPaginated[T any](ctx context.Context, client *Client, path string, opts *ListOptions) (pageRes *paginatedResponse[T], err error) {
+	u, err := url.Parse(client.baseURL + path)
+	if err != nil {
+		return nil, err
+	}
 
-	req, err := http.NewRequest(http.MethodGet, reqURL.String(), nil)
+	opts.encode(u)
+
+	req, err := http.NewRequest(http.MethodGet, u.String(), nil)
 	if err != nil {
 		return nil, err
 	}

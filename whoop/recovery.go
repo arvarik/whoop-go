@@ -3,8 +3,6 @@ package whoop
 import (
 	"context"
 	"fmt"
-	"net/url"
-	"sync"
 	"time"
 )
 
@@ -32,10 +30,6 @@ type RecoveryScore struct {
 // RecoveryService handles communication with the recovery related methods.
 type RecoveryService struct {
 	client *Client
-
-	listURLOnce sync.Once
-	listURL     *url.URL
-	listURLErr  error
 }
 
 // GetByID fetches a single recovery score by cycle ID.
@@ -50,14 +44,7 @@ func (s *RecoveryService) GetByID(ctx context.Context, cycleID int) (*Recovery, 
 
 // List fetches a paginated collection of recovery records.
 func (s *RecoveryService) List(ctx context.Context, opts *ListOptions) (*RecoveryPage, error) {
-	s.listURLOnce.Do(func() {
-		s.listURL, s.listURLErr = url.Parse(s.client.baseURL + "/recovery")
-	})
-	if s.listURLErr != nil {
-		return nil, s.listURLErr
-	}
-
-	page, err := getPaginated[Recovery](ctx, s.client, s.listURL, opts)
+	page, err := getPaginated[Recovery](ctx, s.client, "/recovery", opts)
 	if err != nil {
 		return nil, err
 	}
