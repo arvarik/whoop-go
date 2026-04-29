@@ -161,7 +161,7 @@ func (c *Client) Do(ctx context.Context, req *http.Request) (*http.Response, err
 
 // Get performs a GET request to the specified path and decodes the response into v.
 func (c *Client) Get(ctx context.Context, path string, v any) (err error) {
-	req, err := http.NewRequest(http.MethodGet, c.baseURL+path, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.baseURL+path, nil)
 	if err != nil {
 		return err
 	}

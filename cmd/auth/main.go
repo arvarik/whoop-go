@@ -33,7 +33,7 @@ func main() {
 	// Try to load and refresh an existing token first.
 	if tok, err := loadToken(); err == nil && tok.RefreshToken != "" {
 		fmt.Println("Found existing token session. Attempting refresh...")
-		newTok, err := refreshToken(clientID, clientSecret, tok.RefreshToken)
+		newTok, err := refreshToken(context.Background(), clientID, clientSecret, tok.RefreshToken)
 		if err == nil {
 			saveToken(newTok)
 			printToken(newTok)
@@ -130,7 +130,7 @@ func runAuthFlow(clientID, clientSecret string) {
 		data.Set("client_secret", clientSecret)
 		data.Set("redirect_uri", redirectURI)
 
-		tok, err := exchangeToken(data)
+		tok, err := exchangeToken(r.Context(), data)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("Token exchange error: %v", err), http.StatusInternalServerError)
 			return
@@ -154,8 +154,8 @@ func runAuthFlow(clientID, clientSecret string) {
 	}
 }
 
-func exchangeToken(data url.Values) (tokData *tokenData, err error) {
-	req, err := http.NewRequest(http.MethodPost, "https://api.prod.whoop.com/oauth/oauth2/token", strings.NewReader(data.Encode()))
+func exchangeToken(ctx context.Context, data url.Values) (tokData *tokenData, err error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, "https://api.prod.whoop.com/oauth/oauth2/token", strings.NewReader(data.Encode()))
 	if err != nil {
 		return nil, fmt.Errorf("creating request: %w", err)
 	}
@@ -184,7 +184,7 @@ func exchangeToken(data url.Values) (tokData *tokenData, err error) {
 	return &result, nil
 }
 
-func refreshToken(clientID, clientSecret, refreshTok string) (*tokenData, error) {
+func refreshToken(ctx context.Context, clientID, clientSecret, refreshTok string) (*tokenData, error) {
 	data := url.Values{}
 	data.Set("grant_type", "refresh_token")
 	data.Set("refresh_token", refreshTok)
@@ -192,7 +192,7 @@ func refreshToken(clientID, clientSecret, refreshTok string) (*tokenData, error)
 	data.Set("client_secret", clientSecret)
 	data.Set("scope", "offline")
 
-	return exchangeToken(data)
+	return exchangeToken(ctx, data)
 }
 
 func loadToken() (*tokenData, error) {

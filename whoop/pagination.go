@@ -74,7 +74,7 @@ func getPaginated[T any](ctx context.Context, client *Client, u *url.URL, opts *
 	reqURL := *u
 	opts.encode(&reqURL)
 
-	req, err := http.NewRequest(http.MethodGet, reqURL.String(), nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, reqURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
