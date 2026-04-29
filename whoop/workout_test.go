@@ -80,3 +80,14 @@ func TestWorkoutService_List_Pagination(t *testing.T) {
 		t.Errorf("expected ErrNoNextPage, got %v", err)
 	}
 }
+
+func TestWorkoutPage_NextPage_Error(t *testing.T) {
+	page := &WorkoutPage{
+		NextToken: "",
+	}
+
+	_, err := page.NextPage(context.Background())
+	if !errors.Is(err, ErrNoNextPage) {
+		t.Errorf("expected ErrNoNextPage when NextToken is empty, got %v", err)
+	}
+}
