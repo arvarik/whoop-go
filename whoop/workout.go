@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/url"
-	"sync"
 	"time"
 )
 
@@ -50,10 +49,6 @@ type ZoneDurations struct {
 // WorkoutService handles communication with the workout related methods.
 type WorkoutService struct {
 	client *Client
-
-	listURLOnce sync.Once
-	listURL     *url.URL
-	listURLErr  error
 }
 
 // GetByID fetches a single workout session by its UUID.
@@ -68,14 +63,7 @@ func (s *WorkoutService) GetByID(ctx context.Context, id string) (*Workout, erro
 
 // List fetches a paginated collection of workout sessions.
 func (s *WorkoutService) List(ctx context.Context, opts *ListOptions) (*WorkoutPage, error) {
-	s.listURLOnce.Do(func() {
-		s.listURL, s.listURLErr = url.Parse(s.client.baseURL + "/activity/workout")
-	})
-	if s.listURLErr != nil {
-		return nil, s.listURLErr
-	}
-
-	page, err := getPaginated[Workout](ctx, s.client, s.listURL, opts)
+	page, err := getPaginated[Workout](ctx, s.client, "/activity/workout", opts)
 	if err != nil {
 		return nil, err
 	}

@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/url"
-	"sync"
 	"time"
 )
 
@@ -57,10 +56,6 @@ type SleepNeeded struct {
 // SleepService handles communication with the sleep related methods.
 type SleepService struct {
 	client *Client
-
-	listURL     *url.URL
-	listURLOnce sync.Once
-	listURLErr  error
 }
 
 // GetByID fetches a single sleep event by its UUID.
@@ -75,14 +70,7 @@ func (s *SleepService) GetByID(ctx context.Context, id string) (*Sleep, error) {
 
 // List fetches a paginated collection of sleep events.
 func (s *SleepService) List(ctx context.Context, opts *ListOptions) (*SleepPage, error) {
-	s.listURLOnce.Do(func() {
-		s.listURL, s.listURLErr = url.Parse(s.client.baseURL + "/activity/sleep")
-	})
-	if s.listURLErr != nil {
-		return nil, s.listURLErr
-	}
-
-	page, err := getPaginated[Sleep](ctx, s.client, s.listURL, opts)
+	page, err := getPaginated[Sleep](ctx, s.client, "/activity/sleep", opts)
 	if err != nil {
 		return nil, err
 	}

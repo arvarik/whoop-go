@@ -136,9 +136,8 @@ func TestGetPaginated_DecodeError(t *testing.T) {
 	defer ts.Close()
 
 	client := NewClient(WithBaseURL(ts.URL))
-	u, _ := url.Parse(ts.URL + "/test")
 
-	_, err := getPaginated[Cycle](context.Background(), client, u, &ListOptions{})
+	_, err := getPaginated[Cycle](context.Background(), client, "/test", &ListOptions{})
 	if err == nil {
 		t.Fatal("expected error decoding malformed JSON, got nil")
 	}
