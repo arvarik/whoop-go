@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
@@ -84,4 +85,77 @@ func TestClientStringRedaction(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestClient_Get(t *testing.T) {
+	t.Run("Success", func(t *testing.T) {
+		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if r.Method != http.MethodGet {
+				t.Errorf("expected GET, got %s", r.Method)
+			}
+			if r.URL.Path != "/test" {
+				t.Errorf("expected path /test, got %s", r.URL.Path)
+			}
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write([]byte(`{"foo": "bar"}`))
+		}))
+		defer ts.Close()
+
+		client := NewClient(WithBaseURL(ts.URL))
+		var result struct {
+			Foo string `json:"foo"`
+		}
+		err := client.Get(context.Background(), "/test", &result)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if result.Foo != "bar" {
+			t.Errorf("expected bar, got %s", result.Foo)
+		}
+	})
+
+	t.Run("ServerError", func(t *testing.T) {
+		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusNotFound)
+			_, _ = w.Write([]byte(`{"error": "not found"}`))
+		}))
+		defer ts.Close()
+
+		client := NewClient(WithBaseURL(ts.URL))
+		err := client.Get(context.Background(), "/not-found", nil)
+		if err == nil {
+			t.Fatal("expected error, got nil")
+		}
+	})
+
+	t.Run("MalformedJSON", func(t *testing.T) {
+		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write([]byte(`{invalid json}`))
+		}))
+		defer ts.Close()
+
+		client := NewClient(WithBaseURL(ts.URL))
+		var result map[string]any
+		err := client.Get(context.Background(), "/malformed", &result)
+		if err == nil {
+			t.Fatal("expected error, got nil")
+		}
+	})
+
+	t.Run("NilTarget", func(t *testing.T) {
+		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write([]byte(`{"foo": "bar"}`))
+		}))
+		defer ts.Close()
+
+		client := NewClient(WithBaseURL(ts.URL))
+		err := client.Get(context.Background(), "/nil", nil)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+	})
 }
