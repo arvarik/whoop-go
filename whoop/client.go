@@ -110,14 +110,7 @@ func (c *Client) Do(ctx context.Context, req *http.Request) (*http.Response, err
 
 		// Handle 429 Too Many Requests
 		if attempt >= c.maxRetries {
-			// Drain and close body before returning error to prevent leaks
-			body, _ := io.ReadAll(io.LimitReader(resp.Body, 4096))
-
-			if closeErr := resp.Body.Close(); closeErr != nil {
-				// Intentionally ignore the close error since we are returning the primary HTTP error
-				_ = closeErr
-			}
-			return nil, mapHTTPError(resp, body)
+			return nil, drainAndMapError(resp)
 		}
 
 		// Drain body to reuse connection
@@ -147,13 +140,7 @@ func (c *Client) Do(ctx context.Context, req *http.Request) (*http.Response, err
 
 	// Handle standard HTTP errors (4xx, 5xx).
 	if resp.StatusCode >= 400 {
-		body, _ := io.ReadAll(io.LimitReader(resp.Body, 4096))
-
-		if closeErr := resp.Body.Close(); closeErr != nil {
-			// Intentionally ignore the close error since we are returning the primary HTTP error
-			_ = closeErr
-		}
-		return nil, mapHTTPError(resp, body)
+		return nil, drainAndMapError(resp)
 	}
 
 	return resp, nil
@@ -198,4 +185,13 @@ func (c *Client) String() string {
 // It ensures that even with %#v, the token is redacted.
 func (c *Client) GoString() string {
 	return c.String()
+}
+
+func drainAndMapError(resp *http.Response) error {
+	body, _ := io.ReadAll(io.LimitReader(resp.Body, 4096))
+	if closeErr := resp.Body.Close(); closeErr != nil {
+		// Intentionally ignore the close error since we are returning the primary HTTP error
+		_ = closeErr
+	}
+	return mapHTTPError(resp, body)
 }
