@@ -2,7 +2,7 @@ package whoop
 
 import (
 	"context"
-	"fmt"
+	"strconv"
 	"time"
 )
 
@@ -35,7 +35,7 @@ type RecoveryService struct {
 // GetByID fetches a single recovery score by cycle ID.
 func (s *RecoveryService) GetByID(ctx context.Context, cycleID int) (*Recovery, error) {
 	var item Recovery
-	if err := s.client.Get(ctx, fmt.Sprintf("/cycle/%d/recovery", cycleID), &item); err != nil {
+	if err := s.client.Get(ctx, "/cycle/"+strconv.Itoa(cycleID)+"/recovery", &item); err != nil {
 		return nil, err
 	}
 
