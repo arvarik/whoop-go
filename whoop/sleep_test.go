@@ -3,6 +3,8 @@ package whoop
 import (
 	"context"
 	"errors"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 )
 
@@ -84,4 +86,49 @@ func TestSleepService_List_Pagination(t *testing.T) {
 	if !errors.Is(err, ErrNoNextPage) {
 		t.Errorf("expected ErrNoNextPage, got %v", err)
 	}
+}
+
+func TestSleepService_List_Error(t *testing.T) {
+	t.Run("ContextCancellation", func(t *testing.T) {
+		ts := newMockServer(t)
+		defer ts.Close()
+		client := newMockClient(ts)
+
+		ctx, cancel := context.WithCancel(context.Background())
+		cancel() // Cancel immediately
+
+		_, err := client.Sleep.List(ctx, nil)
+		if err == nil {
+			t.Fatal("expected error from canceled context, got nil")
+		}
+	})
+
+	t.Run("ServerError", func(t *testing.T) {
+		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusInternalServerError)
+			_, _ = w.Write([]byte(`{"error": "internal server error"}`))
+		}))
+		defer ts.Close()
+
+		client := NewClient(WithBaseURL(ts.URL))
+		_, err := client.Sleep.List(context.Background(), nil)
+		if err == nil {
+			t.Fatal("expected error from server 500, got nil")
+		}
+	})
+
+	t.Run("MalformedJSON", func(t *testing.T) {
+		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write([]byte(`{invalid json}`))
+		}))
+		defer ts.Close()
+
+		client := NewClient(WithBaseURL(ts.URL))
+		_, err := client.Sleep.List(context.Background(), nil)
+		if err == nil {
+			t.Fatal("expected error from malformed JSON, got nil")
+		}
+	})
 }
